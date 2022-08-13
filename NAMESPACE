@@ -1,0 +1,27 @@
+
+useDynLib(SFSI, .registration=TRUE)
+
+export(path.plot)
+export(net.plot)
+export(SSI)
+export(SSI.CV)
+export(getGenCov)
+export(collect)
+export(cov2dist)
+export(cov2cor2)
+export(LARS)
+export(readBinary)
+export(saveBinary)
+export(solveEN)
+export(fitBLUP)
+
+exportMethods(SFSI)
+S3method(coef,SSI)
+S3method(coef,LASSO)
+S3method(fitted,SSI)
+S3method(fitted,LASSO)
+S3method(plot,SSI)
+S3method(summary,SSI)
+
+importFrom(stats,cor,var,predict,smooth.spline,IQR,model.matrix,uniroot,runif,sd)
+importFrom(utils,setTxtProgressBar,txtProgressBar,object.size)
