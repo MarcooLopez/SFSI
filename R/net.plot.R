@@ -111,13 +111,15 @@ net.plot <- function(object, Z = NULL, K = NULL, i = NULL,
   if(is.null(group)) group <- data.frame(group=rep(1,nrow(net$xy)))
   gpName <- colnames(group)
 
-  if(!(class(sets) == "character" & length(sets) == 3)){
+  if(!(inherits(sets, "character") & length(sets) == 3)){
    stop("Parameter 'sets' must be a triplet of 'character' type")
   }
 
   dat <- data.frame(id=1:nrow(net$xy),label=net$labels,set=net$set,
                     set_name=sets[net$set],group=group,float::dbl(net$xy))
-  if(any(net$set==4)) dat$set_name[net$set==4] <- sets[1]
+  if(any(net$set==4)){
+     dat$set_name[net$set==4] <- sets[1]
+  }
 
   dat$group <- factor(as.character(dat$group))
   dat$set_name <- factor(as.factor(dat$set_name),levels=c(sets))
@@ -149,11 +151,13 @@ net.plot <- function(object, Z = NULL, K = NULL, i = NULL,
   }else if(length(set.size)==1L) set.size <- rep(set.size,length(sets))
   set.size <- set.size[1:length(sets)]
 
-  if(any(is.na(group.shape)))
+  if(any(is.na(group.shape))){
     stop("The number of elements in 'group.shape' must be of length ",length(levelsGp))
+  }
 
-  if(any(is.na(set.size)) | any(is.na(set.color)))
+  if(any(is.na(set.size)) | any(is.na(set.color))){
     stop("The number of elements in 'set.size' and 'set.color' must be of length ",length(sets))
+  }
 
   theme0 <- ggplot2::theme(
     plot.title = ggplot2::element_text(hjust = 0.5),
@@ -292,7 +296,9 @@ net.plot <- function(object, Z = NULL, K = NULL, i = NULL,
     ggplot2::scale_fill_manual(values = set.color,
               guide=ggplot2::guide_legend(override.aes=list(shape=21,size=2)))
 
-  if(!flagGp) pt <- pt + ggplot2::guides(shape="none")
+  if(!flagGp){
+     pt <- pt + ggplot2::guides(shape="none")
+  }
 
   pt
 }

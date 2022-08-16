@@ -354,19 +354,21 @@ summary.SSI <- function(object, ...)
 
     # Detect maximum accuracy
     index <- which.max(out$accuracy)
-    if(length(index) == 0L)
-    {
+    if(length(index) == 0L){
       optCOR <- out[1, ,drop=FALSE]
       #if(nrow(out)>1) optCOR[1,] <- NA
-    }else optCOR <- out[index, ,drop=FALSE]
+    }else{
+       optCOR <- out[index, ,drop=FALSE]
+    }
 
     # Detect minimum MSE
     index <- which.min(out$MSE)
-    if(length(index)==0)
-    {
+    if(length(index)==0){
       optMSE <- out[1, ,drop=FALSE]
       #if(nrow(out)>1) optMSE[1,] <- NA
-    }else optMSE <- out[index, ,drop=FALSE]
+    }else{
+       optMSE <- out[index, ,drop=FALSE]
+    }
 
     optMSE <- as.matrix(optMSE)[1,]
     optCOR <- as.matrix(optCOR)[1,]
