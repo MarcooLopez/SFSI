@@ -37,8 +37,7 @@ SSI.CV <- function(y, X = NULL, b = NULL, Z = NULL, K, D = NULL,
     mc.cores2 <- ifelse(isLOOCV,1,mc.cores)
 
     if(any(is.na(y[trn]))){
-      warning(sum(is.na(y[trn]))," missing values in the training entries of the response 'y'\n\t",
-              " will be ignored in the cross-validation",immediate.=TRUE)
+      stop("All entries in y[trn] must be non-NA")
     }
 
     compApply <- function(ind)
@@ -46,19 +45,20 @@ SSI.CV <- function(y, X = NULL, b = NULL, Z = NULL, K, D = NULL,
       trn0 <- trn[folds != ind]
       tst0 <- trn[folds == ind]
 
-      fm <- SSI(y, X=X, b=b, K=K, D=D, theta=theta, h2=h2, trn=trn0,
-                tst=tst0,alpha=alpha, method=method, lambda=lambda,
-                nlambda=nlambda,lambda.min=lambda.min, tol=tol,
-                maxiter=maxiter,common.lambda=common.lambda,
-                mc.cores=mc.cores2, save.beta=FALSE, verbose=FALSE)
+      fm <- SSI(y, X=X, b=b, K=K, D=D, theta=theta, h2=h2,
+                trn=trn0, tst=tst0,alpha=alpha, method=method,
+                lambda=lambda, nlambda=nlambda,lambda.min=lambda.min,
+                tol=tol, maxiter=maxiter,common.lambda=common.lambda,
+                mc.cores=mc.cores2, return.beta=FALSE, save.beta=FALSE,
+                verbose=FALSE)
 
       if(isLOOCV){
           rr <- list(u=as.vector(fitted.SSI(fm)), varU=fm$varU, varE=fm$varE,
                      h2=fm$h2, theta=fm$theta, b=fm$b, tst=tst0, df=fm$df, lambda=fm$lambda)
       }else{
-          fv <- summary.SSI(fm)
+          ss <- summary.SSI(fm)
           rr <- list(varU=fm$varU, varE=fm$varE, h2=fm$h2, theta=fm$theta, b=fm$b, tst=tst0,
-                     df=fv$df, lambda=fv$lambda, accuracy=fv$accuracy, MSE=fv$MSE)
+                     df=ss$df, lambda=ss$lambda, accuracy=ss$accuracy, MSE=ss$MSE)
       }
 
       if(verbose){

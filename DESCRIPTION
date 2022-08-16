@@ -5,7 +5,7 @@ Authors@R: c(
     person("Marco", "Lopez-Cruz", role = c("aut","cre"), email = "maraloc@gmail.com"),
     person("Gustavo", "de los Campos", role = c("aut"), email = "gustavoc@msu.edu"),
     person("Paulino", "Perez-Rodriguez", role = c("ctb"), email = "perpdgo@gmail.com"))
-Date: 2022-08-13
+Date: 2022-08-16
 Description: Here we provide tools for the estimation of coefficients in 
      penalized regressions when the (co)variance matrix of predictors 
      and the covariance vector between predictors and response, are 

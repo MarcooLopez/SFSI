@@ -1,10 +1,6 @@
 #====================================================================
 # Plot the top 2 PCs of the K matrix showing tst and trn points
 #====================================================================
-# Z = NULL; K=NULL; group = group.shape = set.color = set.size = df=i=NULL; eps=.Machine$double.eps
-# axis.labels = TRUE; curve = FALSE; bg.color = "white"; unified = TRUE; ntst = 36;
-# line.color = "gray90"; line.tick = 0.3; legend.pos="right"; show.names = TRUE
-# point.color = "gray20"; sets = c("Testing","Supporting","Non-active")
 
 net.plot <- function(object, Z = NULL, K = NULL, i = NULL,
            show.names = FALSE, group = NULL, group.shape = NULL,
@@ -72,7 +68,7 @@ net.plot <- function(object, Z = NULL, K = NULL, i = NULL,
         if(!is.null(object$id) & all(unlist(dimnames(X)) %in% rownames(K))){
           xxx <- yyy <- NULL
         }else{
-          cat("Input 'object' couldn't be linked to 'K'. Input 'K' will be ignored\n")
+          message("Input 'object' couldn't be linked to 'K'. Input 'K' will be ignored")
           K <- xxx <- yyy <- NULL
         }
       }else{
@@ -97,13 +93,13 @@ net.plot <- function(object, Z = NULL, K = NULL, i = NULL,
   if(!isSSI & isSymmetric){
       legend.pos <- "none"
       if(!unified){
-        cat("Only an 'unified' plot can be produced with the input object data\n")
+        message("Only an 'unified' plot can be produced with the input object data")
         unified <- TRUE
       }
   }
 
   if(!unified & length(yyy) >= ntst){
-    cat("Large number of testing individuals. Only the first",ntst,"are shown\n")
+    message("Large number of testing individuals. Only the first",ntst,"are shown")
     yyy <- yyy[1:ntst]
   }
 
@@ -115,8 +111,9 @@ net.plot <- function(object, Z = NULL, K = NULL, i = NULL,
   if(is.null(group)) group <- data.frame(group=rep(1,nrow(net$xy)))
   gpName <- colnames(group)
 
-  if(!(class(sets) == "character" & length(sets) == 3))
+  if(!(class(sets) == "character" & length(sets) == 3)){
    stop("Parameter 'sets' must be a triplet of 'character' type")
+  }
 
   dat <- data.frame(id=1:nrow(net$xy),label=net$labels,set=net$set,
                     set_name=sets[net$set],group=group,float::dbl(net$xy))
@@ -130,8 +127,9 @@ net.plot <- function(object, Z = NULL, K = NULL, i = NULL,
   # Shape and color for the levels of group
   if(!flagGp) dat$group <- dat$set_name
   levelsGp <- levels(dat$group)
-  if(length(levelsGp) > 5)
+  if(length(levelsGp) > 5){
    stop("Number of levels of 'group' must be at most 5")
+  }
 
   if(is.null(group.shape)){
     if(flagGp){

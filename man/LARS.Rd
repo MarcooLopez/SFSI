@@ -3,15 +3,18 @@
 \alias{LARS}
 \title{Least Angle Regression to solve LASSO-type problems}
 \usage{
-LARS(Sigma, Gamma, method=c("LAR","LAR-LASSO"),
-      dfmax = NULL, eps = .Machine$double.eps, scale = TRUE,
-      mc.cores = 1L, save.beta = FALSE, verbose = FALSE)
+LARS(Sigma, Gamma, X =NULL, method=c("LAR","LAR-LASSO"),
+      dfmax = NULL, eps = .Machine$double.eps, 
+      scale = TRUE, mc.cores = 1L, return.beta = TRUE, 
+      save.beta = FALSE, verbose = FALSE)
 
 }
 \arguments{
 \item{Sigma}{(numeric matrix) Variance-covariance matrix of predictors. It can be of the "float32" type as per the 'float' R-package}
 
 \item{Gamma}{(numeric matrix) Covariance between response variable and predictors. If it contains more than one column, the algorithm is applied to each column separately as different response variables}
+
+\item{X}{(numeric matrix) Optional matrix of predictors to obtain fitted values}
 
 \item{method}{(character) Either:
 \itemize{
@@ -30,7 +33,9 @@ taken from the diagonal of \code{Sigma}}
 
 \item{mc.cores}{(integer) Number of cores used. The analysis is run in parallel when \code{mc.cores} is greater than 1. Default is \code{mc.cores=1}}
 
-\item{save.beta}{\code{TRUE} or \code{FALSE} to whether save regression coefficients (in a temporary folder). When \code{save.beta=FALSE} (default) coefficients are returned in the output object. When \code{TRUE} the path where coefficients are saved is returned}
+\item{return.beta}{\code{TRUE} or \code{FALSE} to whether return regression coefficients in the output object}
+
+\item{save.beta}{\code{TRUE} or \code{FALSE} to whether save regression coefficients (in a temporary folder). When \code{TRUE} coefficients are not returned in the output object and instead the path where coefficients were saved is returned. They can be retrieved using \code{coef} method if at least one \code{return.beta} or \code{save.beta} is TRUE}
 
 \item{verbose}{\code{TRUE} or \code{FALSE} to whether printing each LARS step}
 }
@@ -40,6 +45,7 @@ Returns a list object with the following elements:
   \item \code{lambda}: (vector) all the sequence of values of the LASSO penalty.
   \item \code{beta}: (matrix) regression coefficients for each predictor (in rows) associated to each value of the penalization parameter lambda (in columns).
   \item \code{df}: (vector) degrees of freedom, number of non-zero predictors associated to each value of lambda.
+  \item \code{yHat}: (matrix) fitted values calculated using a matrix of predictors (when argument X is not NULL), associated to each value of lambda (in columns).
 }
 The returned object is of the class 'LASSO' for which methods \code{fitted} exist. Function \code{path.plot} can be also used
 }

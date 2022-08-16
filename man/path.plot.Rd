@@ -3,7 +3,7 @@
 \title{Coefficients path plot}
 \usage{
 path.plot(object, Z = NULL, K = NULL, 
-          i = NULL, prune = FALSE, cor.max = 0.95, 
+          i = NULL, prune = FALSE, cor.max = 0.97, 
           lambda.min = .Machine$double.eps^0.5,
           nbreaks.x=6, ...)
 }

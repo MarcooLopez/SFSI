@@ -1,8 +1,6 @@
 
-# Z=NULL; K=NULL; i=NULL; lambda.min = .Machine$double.eps^0.5;
-# trim=FALSE; cor.max=0.95; nbreaks.x = 6; main=NULL
 path.plot <- function(object, Z = NULL, K = NULL, i = NULL,
-                      prune = FALSE, cor.max = 0.95,
+                      prune = FALSE, cor.max = 0.97,
                       lambda.min = .Machine$double.eps^0.5,
                       nbreaks.x = 6, ...)
 {
@@ -81,28 +79,52 @@ path.plot <- function(object, Z = NULL, K = NULL, i = NULL,
         stop("All elements in 'i' must be between 0 < i <= q, where q=ncol(Gamma)")
       }
       indexTST <- i
-    }else indexTST <- seq_along(object$tst)
+    }else{
+      indexTST <- seq_along(object$tst)
+    }
   }
 
   beta <- beta[indexTST]
   object$lambda <- object$lambda[indexTST]
   object$df <- object$df[indexTST]
 
-  if(all(unlist(lapply(object$lambda,length)) < 5L)){
+  nLambda <- unlist(lapply(object$lambda,length))
+  if(all(nLambda < 5L)){
     stop("Coefficients path plot can be generated for at least 5 lambda values")
   }
 
   if(any(unlist(lapply(object$lambda,min)) < lambda.min)){
+    min0 <- min(unlist(lapply(object$lambda, function(x)min(x[x>lambda.min+eps]))))
     for(k in 1:length(object$lambda)){
       tmp <- object$lambda[[k]]
-      object$lambda[[k]] <- ifelse(tmp < lambda.min, min(tmp[tmp>lambda.min + eps])/2, tmp)
+      object$lambda[[k]] <- ifelse(tmp < lambda.min, min0/10, tmp)
     }
   }
 
-  flagprune <- length(object$trn)*length(beta) > 15000 | prune
+  if(length(unique(nLambda)) > 1L){
+    INDEX1 <- matrix(seq_along(indexTST),ncol=1)
+    if(prune){
+      message("'pruning' is applied for each response variable") }
+  }else{
+    if(length(object$trn)*length(beta) > 10000){
+      nTST0 <- ceiling(10000/length(object$trn))
+      message("The number of paths is very large. Only ",nTST0*length(object$trn),
+              " paths corresponding to the first ",nTST0,
+              ifelse(inherits(object, "SSI")," testing elements"," response variables"),
+              " are considered.")
+      message("You can select specific paths through 'i' argument")
 
-  nTSTi <- ceiling(2000/length(object$trn))
-  INDEX1 <- matrix(seq(nTSTi*ceiling(length(indexTST)/nTSTi)),ncol=nTSTi, byrow=TRUE)
+      beta <- beta[seq(nTST0)]
+      object$lambda <- object$lambda[seq(nTST0)]
+      object$df <- object$df[seq(nTST0)]
+      indexTST <- indexTST[seq(nTST0)]
+    }
+    nTSTi <- ceiling(5000/length(object$trn))
+    INDEX1 <- matrix(seq(nTSTi*ceiling(length(indexTST)/nTSTi)),ncol=nTSTi, byrow=TRUE)
+    if(prune & nrow(INDEX1)>1L){
+      message("'pruning' is applied in groups of ",nTSTi*length(object$trn)," paths")
+    }
+  }
 
   id <- Kij <- lambda <- NULL
   dat <- c()
@@ -120,8 +142,8 @@ path.plot <- function(object, Z = NULL, K = NULL, i = NULL,
       indexOK <- indexOK[-indexdrop[-1]]
     }
 
-    if(flagprune & nrow(b0)>1){
-      tmp <- prune(R=cor(t(b0))^2, threshold=cor.max^2)$prune.in
+    if(prune & nrow(b0)>1){
+      tmp <- Prune(R=cor(t(b0))^2, threshold=cor.max^2)$prune.in
       indexOK <- indexOK[tmp]
       b0 <- b0[tmp, ,drop=FALSE]
     }
@@ -135,8 +157,7 @@ path.plot <- function(object, Z = NULL, K = NULL, i = NULL,
           }else{
             Kij <- NA
           }
-          data.frame(df=object$df[[tmp[1]]],
-                     lambda=object$lambda[[tmp[1]]],
+          data.frame(df=object$df[[tmp[1]]],lambda=object$lambda[[tmp[1]]],
                      beta=b0[j,], Kij=Kij, id=id)
     }))
 

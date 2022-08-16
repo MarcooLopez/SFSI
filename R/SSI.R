@@ -1,18 +1,15 @@
 
-#X = Z = save.at = name = subset= D= NULL; theta=h2=lambda=b=NULL; save.beta=TRUE
-#alpha = 1; nlambda = 100; common.lambda = TRUE; lambda.min = .Machine$double.eps^0.5
-#mc.cores = 1; tol = 1E-4; maxiter = 500; verbose = TRUE; method = c("REML","ML")[1]
-
 SSI <- function(y, X = NULL, b = NULL, Z = NULL, K, D = NULL,
          theta = NULL, h2 = NULL, trn = seq_along(y),
          tst = seq_along(y), subset = NULL, alpha = 1, lambda = NULL,
          nlambda = 100, lambda.min = .Machine$double.eps^0.5,
          common.lambda = TRUE, tol = 1E-4, maxiter = 500,
-         method = c("REML","ML"), save.beta = TRUE, save.at = NULL,
-         name = NULL, mc.cores = 1L, verbose = TRUE)
+         method = c("REML","ML"), return.beta = FALSE, save.beta = TRUE,
+         save.at = NULL, name = NULL, mc.cores = 1L, verbose = TRUE)
 {
   method <- match.arg(method)
 
+  y <- as.vector(y)
   n <- length(y)
   if(is.logical(trn)){
      if(n != length(trn)) stop("Object 'trn' must be of the same length of 'y'\n")
@@ -22,14 +19,16 @@ SSI <- function(y, X = NULL, b = NULL, Z = NULL, K, D = NULL,
      if(n != length(tst)) stop("Object 'tst' must be of the same length of 'y'\n")
      tst <- which(tst)
   }
-  nTRN <- length(trn);  nTST <- length(tst)
+  nTST <- length(tst)
+  if(any(is.na(y[trn]))){
+    stop("All entries in y[trn] must be non-NA")
+  }
 
   if(is.character(K)){
       K <- readBinary(K)
   }
 
   if(!float::storage.mode(K) %in% c("float32","double")) storage.mode(K) <- "double"
-  isFloat <- float::storage.mode(K)=="float32"
 
   if(is.null(X))   # Design matrix for fixed effects including the intercept
   {
@@ -63,13 +62,13 @@ SSI <- function(y, X = NULL, b = NULL, Z = NULL, K, D = NULL,
     D <- D[trn,trn]
   }
 
-  RHS <- K[trn,tst,drop=FALSE]
+  RHS <- K[trn,tst, drop=FALSE]
   K <- K[trn,trn]
 
   if(is.null(theta) & is.null(h2))
   {
     # Fit LMM to get variance components and estimate fixed effects as GLS
-    fm <- fitBLUP(y[trn],X=X[trn, ,drop=FALSE],K=K,method=method)
+    fm <- fitBLUP(y[trn], X=X[trn, ,drop=FALSE], K=K, method=method)
     if(fm$convergence){
       varU <- fm$varU
       varE <- fm$varE
@@ -81,7 +80,7 @@ SSI <- function(y, X = NULL, b = NULL, Z = NULL, K, D = NULL,
   }else{   # Only estimate fixed effects as GLS
     varU <- varE <- NA
     if(!is.null(theta) & !is.null(h2)){
-      cat("Both 'theta' and 'h2' are provided. Only 'theta' will be considered\n")
+      message("Both 'theta' and 'h2' are provided. Only 'theta' will be considered")
       h2 <- NULL
     }
     if(is.null(theta)){
@@ -90,7 +89,7 @@ SSI <- function(y, X = NULL, b = NULL, Z = NULL, K, D = NULL,
       h2 <- 1/(1+theta)
     }
     if(is.null(b)){
-      b <- fitBLUP(y[trn],X=X[trn,,drop=FALSE],K=K,BLUP=FALSE,theta=theta)$b
+      b <- fitBLUP(y[trn], X=X[trn, ,drop=FALSE], K=K, BLUP=FALSE, theta=theta)$b
     }else{
       if(length(b) != ncol(X)) stop("The length of 'b' must be the same as the number of columns of 'X'\n")
     }
@@ -98,6 +97,9 @@ SSI <- function(y, X = NULL, b = NULL, Z = NULL, K, D = NULL,
   }
   if(h2 < 0.001) warning("The 'heritability' is too small. Results may be affected",immediate.=TRUE)
   Xb <- drop(X%*%b)
+
+  # Adjusted training phenotypes
+  yTRN <- matrix(y[trn]-Xb[trn], nrow=1)
 
   # Adding theta*I
   if(is.null(D)){
@@ -143,16 +145,17 @@ SSI <- function(y, X = NULL, b = NULL, Z = NULL, K, D = NULL,
   }
 
   if(verbose){
-    cat(" Fitting SSI model for nTST=",length(tst),tmp," and nTRN=",nTRN," individuals\n",sep="")
+    message(" Fitting SSI for nTST=",length(tst),tmp," and nTRN=",length(trn)," individuals",sep="")
   }
 
-  save.beta <- ifelse(!is.null(save.at),TRUE,save.beta)
+  save.beta <- ifelse(!is.null(save.at), TRUE, save.beta)
 
-  out <- solveEN(K, RHS, alpha=alpha, lambda=lambda,
+  out <- solveEN(K, RHS, X=yTRN, alpha=alpha, lambda=lambda,
                 nlambda=nlambda, lambda.min=lambda.min,
                 common.lambda=common.lambda,
                 tol=tol, maxiter=maxiter,
-                mc.cores=mc.cores, save.beta=save.beta,
+                mc.cores=mc.cores, return.beta=return.beta,
+                save.beta=save.beta,
                 verbose=verbose)
 
   # If 'save.at' is not NULL
@@ -160,16 +163,16 @@ SSI <- function(y, X = NULL, b = NULL, Z = NULL, K, D = NULL,
     if(!file.exists(dirname(save.at)))  dir.create(dirname(save.at),recursive = TRUE)
 
     if(!is.null(subset)){
-       prefix_file_beta <- paste0(save.at,"subset_",subset[1],"_of_",subset[2],"_beta_")
+       prefix_file_beta <- paste0(save.at,"subset_",subset[1],"_of_",subset[2],"_beta_i_")
        outfile <- paste0(save.at,"subset_",subset[1],"_of_",subset[2],"_output.RData")
     }else{
-       prefix_file_beta <- paste0(save.at,"beta_")
+       prefix_file_beta <- paste0(save.at,"beta_i_")
        outfile <- paste0(save.at,"output.RData")
     }
     unlink(outfile)
     unlink(paste0(prefix_file_beta,"*.RData"))
     for(k in out$name_beta){
-      file.copy(gsub("beta_\\*.RData",paste0("beta_",k,".RData"),out$file_beta),
+      file.copy(gsub("i_\\*.RData",paste0("i_",k,".RData"),out$file_beta),
                 paste0(prefix_file_beta,k,".RData"))
     }
     unlink(out$file_beta)
@@ -177,13 +180,18 @@ SSI <- function(y, X = NULL, b = NULL, Z = NULL, K, D = NULL,
   }
 
   if(out$q == 1L){
+    u0 <- out$yHat
     df0 <- matrix(out$df, nrow=1)
     lambda0 <- matrix(out$lambda, nrow=1)
   }else{
+    u0 <- do.call(rbind, out$yHat)
     df0 <- do.call(rbind, out$df)
     lambda0 <- do.call(rbind, out$lambda)
   }
-  out <- list(name=name, id=id, y=y, Xb=Xb, b=b, varU=varU, varE=varE,
+  dimnames(u0) <- list(tst, paste0("SSI.",1:ncol(u0)))
+
+  out <- list(name=name, id=id, y=y, Xb=Xb, u=u0,
+              b=b, varU=varU, varE=varE,
               theta=theta, h2=h2, trn=trn, tst=tst, alpha=alpha,
               df = df0, lambda = lambda0,
               beta = out$beta,
@@ -199,7 +207,7 @@ SSI <- function(y, X = NULL, b = NULL, Z = NULL, K, D = NULL,
 
   # Save outputs if 'save.at' is not NULL
   if(!is.null(save.at)){
-    save(out,file=outfile)
+    save(out, file=outfile)
   }
   return(out)
 }

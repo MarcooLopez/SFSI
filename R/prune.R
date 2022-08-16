@@ -3,7 +3,7 @@
 # Prunne elements based on pairwise similarity R (correlation, R^2, etc)
 #====================================================================
 
-prune <- function(R, threshold=0.95, D=NULL, d.max=NULL, verbose=FALSE)
+Prune <- function(R, threshold=0.95, D=NULL, d.max=NULL, verbose=FALSE)
 {
     nc <- nchar(ncol(R))
     PrFn <- function(x, nc=3)sprintf(paste0('%',nc,'d'),x)

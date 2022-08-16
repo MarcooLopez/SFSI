@@ -1,11 +1,8 @@
 
-# method=c("LAR","LAR-LASSO")[1]; dfmax = NULL;
-# eps = .Machine$double.eps; scale = TRUE; mc.cores = 1L
-# save.beta = FALSE; verbose = FALSE
-
-LARS <- function(Sigma, Gamma, method=c("LAR","LAR-LASSO"),
-      dfmax = NULL, eps = .Machine$double.eps, scale = TRUE,
-      mc.cores = 1L, save.beta = FALSE, verbose = FALSE)
+LARS <- function(Sigma, Gamma, X = NULL, method=c("LAR","LAR-LASSO"),
+                 dfmax = NULL, eps = .Machine$double.eps,
+                 scale = TRUE, mc.cores = 1L, return.beta = TRUE,
+                 save.beta = FALSE, verbose = FALSE)
 {
   method <- match.arg(method)
 
@@ -27,6 +24,13 @@ LARS <- function(Sigma, Gamma, method=c("LAR","LAR-LASSO"),
         isfloat <- TRUE
   }
 
+  if(!is.null(X)){
+    if(length(dim(X)) != 2L){
+      X <- matrix(X, nrow=1L)
+    }
+    stopifnot(ncol(X) == nrow(Gamma))
+  }
+
   Sp <- nchar(p)
   textPrint <- c(" Step","\tSec/Step","\tVariable")
 
@@ -36,6 +40,11 @@ LARS <- function(Sigma, Gamma, method=c("LAR","LAR-LASSO"),
     Gamma <- float::sweep(Gamma, 1L, sdx, FUN = "/")
   }else{
     sdx <- rep(1,p)
+  }
+
+  if(return.beta & save.beta){
+    message("'return.beta' is set to FALSE when 'save.beta=TRUE'")
+    return.beta <- FALSE
   }
 
   compApply <- function(ind)
@@ -148,8 +157,16 @@ LARS <- function(Sigma, Gamma, method=c("LAR","LAR-LASSO"),
     }
     df <- do.call(c,lapply(1:ncol(beta),function(i) sum(abs(beta[,i])>0)))
 
-    if(save.beta){
-      save(beta, file=paste0(prefix_file_beta,ind,".RData"))
+    if(!is.null(X)){
+      yHat <- X%*%as.matrix(beta)
+    }else{
+      yHat <- NULL
+    }
+
+    if(!return.beta){
+      if(save.beta){
+        save(beta, file=paste0(prefix_file_beta,ind,".RData"))
+      }
       beta <- NULL
     }
 
@@ -158,11 +175,11 @@ LARS <- function(Sigma, Gamma, method=c("LAR","LAR-LASSO"),
       utils::setTxtProgressBar(pb, nchar(scan(con,what="character",quiet=TRUE))/q)
     }
 
-    list(i=ind, beta=beta, lambda=lambda, df=df)
+    list(i=ind, yHat=yHat, beta=beta, lambda=lambda, df=df)
   }
 
   tmpdir0 <- tempdir()
-  prefix_file_beta <- paste0(tempfile(tmpdir=tmpdir0),"_beta_")
+  prefix_file_beta <- paste0(tempfile(tmpdir=tmpdir0),"_beta_i_")
   unlink(paste0(prefix_file_beta,"*.RData"))
 
   if(verbose & q>1L){
@@ -184,6 +201,7 @@ LARS <- function(Sigma, Gamma, method=c("LAR","LAR-LASSO"),
   }
 
   out <- list(p=p, q=q, method=method,
+              yHat = lapply(out, function(x)x$yHat),
               lambda = lapply(out, function(x)x$lambda),
               df = lapply(out, function(x)x$df),
               beta = lapply(out, function(x)x$beta),
@@ -191,15 +209,21 @@ LARS <- function(Sigma, Gamma, method=c("LAR","LAR-LASSO"),
               name_beta = seq(q)
             )
   if(q == 1L){
+    out$yHat <- out$yHat[[1]]
     out$df <- out$df[[1]]
     out$lambda <- out$lambda[[1]]
     out$beta <- out$beta[[1]]
   }
 
-  if(save.beta){
+  if(is.null(X)){
+    out$yHat <- NULL
+  }
+
+  if(save.beta | !return.beta){
     out$beta <- NULL
-  }else{
-     out$file_beta <- out$name_beta <- NULL
+  }
+  if(!save.beta){
+    out$file_beta <- out$name_beta <- NULL
   }
 
   class(out) <- "LASSO"

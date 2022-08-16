@@ -49,7 +49,6 @@ backsolvet <- function(r, x, k=ncol(r))
 #====================================================================
 # Update the lower triangular CHOLESKY decomposition when adding a new column
 #====================================================================
-# xtx=P[inew,inew]; Xtx=as.vector(P[inew,active])
 upDateR <- function(xtx, R = NULL, Xtx, eps = .Machine$double.eps)
 {
   norm.xnew <- sqrt(xtx)
@@ -74,7 +73,6 @@ upDateR <- function(xtx, R = NULL, Xtx, eps = .Machine$double.eps)
     R
   }
 }
-
 
 #====================================================================
 # Update the lower triangular CHOLESKY decomposition when deleting one column
@@ -204,7 +202,6 @@ dlogLik <- function(ratio, n, c0, Uty, UtX, d)
 #====================================================================
 # Derivative of the Log-restricted Likelihood (REML)
 #====================================================================
-# tt=dlogResLik(ratio,n=n,c0=c0,Uty=Uty,UtX=UtX,d=d)
 dlogResLik <- function(ratio, n, c0, Uty, UtX, d)
 {
   dbar <- 1/(ratio*d+1)
@@ -279,7 +276,6 @@ searchInt <- function(method, interval, n, c0, Uty, UtX, d, maxiter, tol, lower,
 #====================================================================
 # Labels and breaks for the DF axis
 #====================================================================
-# x = dat$lambda; y = dat$df
 get_breaks <- function(x, y, nbreaks = 6, ymin = 1)
 {
   p <- max(round(y))
@@ -297,9 +293,6 @@ get_breaks <- function(x, y, nbreaks = 6, ymin = 1)
   tt <- stats::predict(fm,tmp)
   xxmin <- tt$x[min(which(tt$y >= ymin))]
 
-  #xx <- stats::predict(stats::smooth.spline(y, neglogx),yy)$y
-  #tmp <- data.frame(x=exp(-xx),neglogx=xx,y=yy)
-  #breaks.x <- seq(tmp[1,2], -log(min(x)), length=nbreaks)
   breaks.x <- seq(xxmin, -log(min(x)), length=nbreaks)
   breaks.y <- stats::predict(fm, breaks.x)$y
 
@@ -338,8 +331,8 @@ get_net <- function(X, K = NULL, xxx = NULL, yyy = NULL, eps = .Machine$double.e
           }else{
             yyy <- match(rownames(X),uniqueNames)
             xxx <- match(colnames(X),uniqueNames)
-            cat("Some row/column names of 'object' were not found in row names of 'K'.",
-                "\nInput 'K' will be ignored\n")
+            message("Some row/column names of 'object' were not found in row names of 'K'.",
+                "\nInput 'K' will be ignored")
             K <- NULL
           }
         }else{
@@ -364,15 +357,15 @@ get_net <- function(X, K = NULL, xxx = NULL, yyy = NULL, eps = .Machine$double.e
 
     }else{
       if((has_names(X) + has_names(K)) <= 1){
-        cat("Input 'object' couldn't be linked to 'K' through row/column names.",
-            "\nInput 'K' will be ignored\n")
+        message("Input 'object' couldn't be linked to 'K' through row/column names.",
+            "\nInput 'K' will be ignored")
         K <- NULL
       }
     }
     if(has_names(X) & has_names(K)){
       if(any(!uniqueNames %in% rownames(K))){
-        cat("Some row/column names of 'object' were not found in row names of 'K'.",
-          "\nInput 'K' will be ignored\n")
+        message("Some row/column names of 'object' were not found in row names of 'K'.",
+          "\nInput 'K' will be ignored")
           K <- NULL
       }
     }
@@ -474,7 +467,7 @@ get_net <- function(X, K = NULL, xxx = NULL, yyy = NULL, eps = .Machine$double.e
   |    ._____| | | |       ._____| | .__| |__.     Marco Lopez-Cruz       |
   |    |_______| |_|       |_______| |_______|     Gustavo de los Campos  |
   |                                                                       |
-  |    Sparse Family and Selection Index. Version 1.2.0 (Aug 13, 2022)    |
+  |    Sparse Family and Selection Index. Version 1.2.0 (Aug 16, 2022)    |
   |    Type 'citation('SFSI')' to know how to cite SFSI                   |
   |    Type 'help(package='SFSI',help_type='html')' to see help           |
   |    Type 'browseVignettes('SFSI')' to see documentation                |

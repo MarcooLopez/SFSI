@@ -34,9 +34,12 @@ coef.SSI <- function(object, ..., df = NULL, i = NULL)
   }
   isSingleFile <- length(filename)==1L
 
-  if(is.null(filename) & !is.null(object$beta))
-  {
-    if(length(object$tst) ==1L){
+  if(is.null(filename)){
+    if(is.null(object$beta)){
+      stop("No regression coefficients were found for the input object")
+    }
+
+    if(length(object$tst) == 1L){
       BETA <- object$beta
     }else{
       BETA <- object$beta[i]
@@ -51,7 +54,7 @@ coef.SSI <- function(object, ..., df = NULL, i = NULL)
     for(j in 1:length(i))
     {
       if(isSingleFile){
-        load(gsub("beta_\\*.RData",paste0("beta_",i[j],".RData"),object$file_beta))
+        load(gsub("i_\\*.RData",paste0("i_",i[j],".RData"),object$file_beta))
         if(!is.null(df)){
              beta <- beta[, which.df, drop=FALSE]
         }
@@ -59,7 +62,7 @@ coef.SSI <- function(object, ..., df = NULL, i = NULL)
         # For the case with subset
         f <- which(object$subset$index[,1]<= i[j] & object$subset$index[,2]>= i[j])
         i0 <- ifelse(f==1, i[j], i[j]-object$subset$index[f-1,2])
-        load(gsub("beta_\\*.RData",paste0("beta_",i0,".RData"),object$file_beta[f]))
+        load(gsub("i_\\*.RData",paste0("i_",i0,".RData"),object$file_beta[f]))
         if(!is.null(df))  beta <- beta[, which.df, drop=FALSE]
 
         #cat("i=",i,"j=",j,"j2=",j2,"\n")
@@ -85,11 +88,14 @@ coef.LASSO <- function(object, ..., i = NULL)
     i <- seq(object$q)
   }else{
     if( any(!i %in% seq(object$q)) ){
-      stop("All elements in 'i' must be between 0 < i <= ncol(Gamma)")}
+      stop("All elements in 'i' must be between 0 < i <= ncol(Gamma)")
+    }
   }
 
   if(is.null(object$file_beta)){
-    stopifnot(!is.null(object$beta))
+    if(is.null(object$beta)){
+      stop("No regression coefficients were found for the input object")
+    }
     if(object$q ==1L){
       BETA <- object$beta
     }else{
@@ -98,7 +104,7 @@ coef.LASSO <- function(object, ..., i = NULL)
   }else{
     BETA <- vector("list",length(i))
     for(k in 1:length(i)){
-      load(gsub("beta_\\*.RData",paste0("beta_",i[k],".RData"),object$file_beta))
+      load(gsub("i_\\*.RData",paste0("i_",i[k],".RData"),object$file_beta))
       BETA[[k]] <- beta
     }
   }
@@ -115,11 +121,19 @@ coef.LASSO <- function(object, ..., i = NULL)
 fitted.LASSO <- function(object, ...)
 {
   args0 <- list(...)
-  if(length(args0)==0) stop("A matrix of predictors must be provided")
-
-  X <- args0[[1]]
-  if(length(dim(X)) != 2){
-    X <- t(X)
+  if(length(args0) == 0L){
+    stop("A matrix of predictors must be provided")
+  }
+  if('X' %in% names(args0)){
+    X <- args0$X
+  }else{
+    if(length(args0) > 1L){
+      message("Only the second argument is considered as the matrix of predictors")
+    }
+    X <- args0[[1]]
+  }
+  if(length(dim(X)) != 2L){
+    X <- matrix(X, nrow=1L)
   }
 
   yHat <- lapply(seq(object$q),function(i){
@@ -139,16 +153,37 @@ fitted.SSI <- function(object, ...)
 {
   args0 <- list(...)
   if("CV" %in% names(object)) stop("'fitted' method cannot be applied after cross-validation")
-  yTRN <- as.vector(object$y[object$trn]-object$Xb[object$trn])
-  indexdrop <- is.na(yTRN)
-  if(length(indexdrop)>0) yTRN[indexdrop] <- 0
 
-  uHat <- do.call(rbind,lapply(seq_along(object$tst),function(i){
-    crossprod(as.matrix(coef.SSI(object, i=i)), yTRN)[,1]
-  }))
-  dimnames(uHat) <- list(object$tst,paste0("SSI.",1:ncol(uHat)))
+  if(length(args0) > 0){
+    if('y' %in% names(args0)){
+      y <- args0$y
+    }else{
+      if(length(args0)>1){
+        message("Only the second argument is considered as the obvervations vector")
+      }
+      y <- args0[[1]]
+    }
 
-  return(uHat)
+    if(length(y) != length(object$y)){
+      stop("Length of the observations vector must be equal to length(object$y)")
+    }
+
+    if(any(is.na(y[object$trn]))){
+      stop("All entries in y[trn] must be non-NA")
+    }
+
+    yTRN <- matrix(as.vector(y[object$trn] - object$Xb[object$trn]), nrow=1)
+
+    u <- do.call(rbind,lapply(seq_along(object$tst),function(i){
+      yTRN %*% as.matrix(coef.SSI(object, i=i))
+    }))
+    dimnames(u) <- list(object$tst, paste0("SSI.",1:ncol(u)))
+
+  }else{
+    u <- object$u
+  }
+
+  return(u)
 }
 
 #====================================================================
@@ -165,9 +200,17 @@ plot.SSI <- function(..., py = c("accuracy","MSE"), nbreaks.x = 6)
     if("main" %in% names(args0)) main <- args0$main
     if("xlab" %in% names(args0)) xlab <- args0$xlab
     if("ylab" %in% names(args0)) ylab <- args0$ylab
+    if("y" %in% names(args0)){
+      y <- args0$y
+    }
 
     object <- args0[unlist(lapply(args0,function(x)inherits(x, "SSI")))]
-    if(length(object) == 0L) stop("No object of the class 'SSI' was provided")
+    if(length(object) == 0L){
+       stop("No object of the class 'SSI' was provided")
+    }
+    if(length(object)>1L & !is.null(y)){
+      message("Same observation vector is used for all 'SSI' class objects")
+    }
 
     # Treat repeated fm$name
     objectNames <- unlist(lapply(1:length(object),function(k) object[[k]]$name))
@@ -181,7 +224,9 @@ plot.SSI <- function(..., py = c("accuracy","MSE"), nbreaks.x = 6)
 
     trn <- unlist(lapply(object,function(x)x$trn))
     tmp <- unlist(lapply(object,function(x)all(trn %in% x$trn) & all(x$trn %in% trn)))
-    if(any(!tmp)) cat("'Training' set is not same across all 'SSI' objects\n")
+    if(any(!tmp)){
+       message("'Training' set is not same across all 'SSI' class objects")
+    }
 
     theme0 <- ggplot2::theme(
       panel.grid.minor = ggplot2::element_blank(),
@@ -200,13 +245,17 @@ plot.SSI <- function(..., py = c("accuracy","MSE"), nbreaks.x = 6)
     for(j in 1:length(object))
     {
         fm0 <- object[[j]]
-        ss <- summary.SSI(fm0)
+        if(is.null(y)){
+          ss <- summary.SSI(fm0)
+        }else{
+          ss <- summary.SSI(fm0, y=y)
+        }
         names(ss[[py]]) <- paste0("SSI.",1:length(ss[[py]]))
 
         tt <- data.frame(SSI=names(ss[[py]]),y=ss[[py]],df=ss[['df']],lambda=ss[['lambda']])
         if(any(tt$lambda < .Machine$double.eps)){
-              tmp <- tt$lambda[tt$lambda >= .Machine$double.eps]
-              tt[tt$lambda < .Machine$double.eps,'lambda'] <- ifelse(length(tmp)>0,min(tmp)/2,1E-6)
+          tmp <- tt$lambda[tt$lambda >= .Machine$double.eps]
+          tt[tt$lambda < .Machine$double.eps,'lambda'] <- ifelse(length(tmp)>0,min(tmp)/10,1E-6)
         }
 
         tt <- data.frame(obj=j,name=objectNames[j],tt,stringsAsFactors=FALSE)
@@ -226,18 +275,24 @@ plot.SSI <- function(..., py = c("accuracy","MSE"), nbreaks.x = 6)
     dat <- dat[!dat$obj %in% names(index[index==1]),]
     meanopt <- meanopt[!meanopt$obj %in% names(index[index==1]),]
 
-    if(nrow(dat)==0 | nrow(meanopt)==0)  stop("The plot can not be generated with the provided data")
+    if(nrow(dat)==0 | nrow(meanopt)==0){
+        stop("The plot can not be generated with the provided data")
+    }
 
     dat <- dat[!is.na(dat$y),]   # Remove NA values
 
     if("xlim" %in% names(args0)){
        xlim <- args0$xlim
-    }else xlim <- c(1,max(dat$df,na.rm=TRUE))
+    }else{
+       xlim <- c(1,max(dat$df, na.rm=TRUE))
+    }
     dat <- dat[dat$df >= xlim[1] & dat$df <= xlim[2],]
 
     if("ylim" %in% names(args0)){
        ylim <- args0$ylim
-    }else ylim <- range(dat$y, na.rm=TRUE)
+    }else{
+       ylim <- range(dat$y, na.rm=TRUE)
+    }
 
     # Labels and breaks for the DF axis
     tmp <- get_breaks(dat$lambda, dat$df, nbreaks=nbreaks.x, ymin=xlim[1])
@@ -265,9 +320,6 @@ summary.SSI <- function(object, ...)
 {
     args0 <- list(...)
 
-    tmp <- args0[unlist(lapply(args0,function(x)inherits(x, "SSI")))]
-    if(length(tmp) > 0L) cat("More than one object of the class 'SSI' was provided. Only the first one is considered\n")
-
     if(!inherits(object, "SSI")) stop("The input object is not of the class 'SSI'")
 
     if(length(object$CV) > 0L)
@@ -277,14 +329,25 @@ summary.SSI <- function(object, ...)
       MSE <- apply(do.call(rbind,lapply(object$CV,function(x)x$MSE)),2,mean,na.rm=TRUE)
       accuracy <- apply(do.call(rbind,lapply(object$CV,function(x)x$accuracy)),2,mean,na.rm=TRUE)
     }else{
-      tst <- object$tst
-      y <- as.vector(object$y)
-
-      df <- apply(object$df,2,mean)
-      lambda <- apply(object$lambda,2,mean)
-      uHat <- fitted.SSI(object)
-      accuracy <- suppressWarnings(drop(stats::cor(y[tst],uHat,use="pairwise.complete.obs")))
-      MSE <- suppressWarnings(apply((y[tst]-uHat)^2,2,sum,na.rm=TRUE)/length(tst))
+      if(length(args0) > 0){
+        if('y' %in% names(args0)){
+          y <- args0$y
+        }else{
+          if(length(args0)>1){
+            message("Only the second argument is considered as the observations vector")
+          }
+          y <- as.vector(args0[[1]])
+        }
+        stopifnot(length(y) == length(object$y))
+        u <- fitted.SSI(object, y)
+      }else{
+        y <- as.vector(object$y)
+        u <- object$u
+      }
+      df <- apply(object$df, 2, mean)
+      lambda <- apply(object$lambda, 2, mean)
+      accuracy <- suppressWarnings(drop(stats::cor(y[object$tst],u,use="pairwise.complete.obs")))
+      MSE <- suppressWarnings(apply((y[object$tst]-u)^2,2,sum,na.rm=TRUE)/length(object$tst))
     }
 
     out <- data.frame(accuracy=accuracy, MSE=MSE, df=df, lambda=lambda)
@@ -310,6 +373,8 @@ summary.SSI <- function(object, ...)
 
     tmp <- as.list(out)
     tmp <- lapply(tmp,function(x){names(x)=rownames(out);x})
-    do.call(c, list(nTST=length(object$tst), nTRN=length(object$trn),
-                    tmp, optCOR=list(optCOR), optMSE=list(optMSE)))
+    do.call(c, list(nTST=length(object$tst),
+                    nTRN=length(object$trn), tmp,
+                    optCOR=list(optCOR),
+                    optMSE=list(optMSE)))
 }

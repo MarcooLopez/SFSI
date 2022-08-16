@@ -1,11 +1,9 @@
 
-# Sigma=XtX; Gamma=Xty; alpha = 1; lambda = NULL; nlambda = 100; scale = TRUE
-# tol = 1E-5; maxiter = 1000; verbose = FALSE
-
-solveEN <- function(Sigma, Gamma, alpha = 1, lambda = NULL,
-    nlambda = 100, lambda.min = .Machine$double.eps^0.5,
-    common.lambda = TRUE, dfmax = NULL, scale = TRUE, tol = 1E-5,
-    maxiter = 1000, mc.cores = 1L, save.beta = FALSE, verbose = FALSE)
+solveEN <- function(Sigma, Gamma, X = NULL, alpha = 1,
+              lambda = NULL, nlambda = 100, common.lambda = TRUE,
+              lambda.min = .Machine$double.eps^0.5, dfmax = NULL,
+              scale = TRUE, tol = 1E-5, maxiter = 1000, mc.cores = 1L,
+              return.beta = TRUE, save.beta = FALSE, verbose = FALSE)
 {
     alpha <- as.numeric(alpha)
     scale <- as.logical(scale)
@@ -34,6 +32,13 @@ solveEN <- function(Sigma, Gamma, alpha = 1, lambda = NULL,
           isfloat <- TRUE
     }
 
+    if(!is.null(X)){
+      if(length(dim(X)) != 2L){
+        X <- matrix(X, nrow=1L)
+      }
+      stopifnot(ncol(X) == nrow(Gamma))
+    }
+
     dfmax <- ifelse(is.null(dfmax), p, as.integer(dfmax))
 
     if(scale){
@@ -44,7 +49,6 @@ solveEN <- function(Sigma, Gamma, alpha = 1, lambda = NULL,
       sdx <- rep(1, p)
     }
     sdx <-  float::dbl(sdx)
-
 
     if(is.null(lambda)){
       if(common.lambda){
@@ -71,6 +75,11 @@ solveEN <- function(Sigma, Gamma, alpha = 1, lambda = NULL,
     storage.mode(lambda) <- "double"
     nlambda <- nrow(lambda)
     verbose2 <- (verbose & q==1L)
+
+    if(return.beta & save.beta){
+      message("'return.beta' is set to FALSE when 'save.beta=TRUE'")
+      return.beta <- FALSE
+    }
 
     compApply <- function(ind)
     {
@@ -104,9 +113,16 @@ solveEN <- function(Sigma, Gamma, alpha = 1, lambda = NULL,
         beta <- Matrix::Matrix(tmp[[1]], sparse=TRUE)
       }
 
-      if(save.beta){
-        save(beta, file=paste0(prefix_file_beta,ind,".RData"))
+      if(!is.null(X)){
+        yHat <- X%*%as.matrix(beta)
+      }else{
+        yHat <- NULL
+      }
 
+      if(!return.beta){
+        if(save.beta){
+          save(beta, file=paste0(prefix_file_beta,ind,".RData"))
+        }
         beta <- NULL
       }
 
@@ -115,11 +131,11 @@ solveEN <- function(Sigma, Gamma, alpha = 1, lambda = NULL,
         utils::setTxtProgressBar(pb, nchar(scan(con,what="character",quiet=TRUE))/q)
       }
 
-      list(ind=ind, beta=beta, lambda=lambda0, df=df0)
+      list(ind=ind, yHat=yHat, beta=beta, lambda=lambda0, df=df0)
     }
 
     tmpdir0 <- tempdir()
-    prefix_file_beta <- paste0(tempfile(tmpdir=tmpdir0),"_beta_")
+    prefix_file_beta <- paste0(tempfile(tmpdir=tmpdir0),"_beta_i_")
     unlink(paste0(prefix_file_beta,"*.RData"))
 
     if(verbose & q>1L){
@@ -141,6 +157,7 @@ solveEN <- function(Sigma, Gamma, alpha = 1, lambda = NULL,
     }
 
     out <- list(p=p, q=q,
+                yHat = lapply(out, function(x)x$yHat),
                 lambda = lapply(out, function(x)x$lambda),
                 df = lapply(out, function(x)x$df),
                 beta = lapply(out, function(x)x$beta),
@@ -149,15 +166,20 @@ solveEN <- function(Sigma, Gamma, alpha = 1, lambda = NULL,
               )
 
     if(q == 1L){
+      out$yHat <- out$yHat[[1]]
       out$df <- out$df[[1]]
       out$lambda <- out$lambda[[1]]
       out$beta <- out$beta[[1]]
     }
+    if(is.null(X)){
+      out$yHat <- NULL
+    }
 
-    if(save.beta){
+    if(save.beta | !return.beta){
       out$beta <- NULL
-    }else{
-       out$file_beta <- out$name_beta <- NULL
+    }
+    if(!save.beta){
+      out$file_beta <- out$name_beta <- NULL
     }
 
     class(out) <- "LASSO"

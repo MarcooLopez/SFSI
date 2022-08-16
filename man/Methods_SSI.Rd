@@ -20,7 +20,7 @@
 \itemize{
  \item One or more objects of the class 'SSI' (for method \code{plot})
  \item Other arguments for method \code{plot}: 'xlab', 'ylab', 'main', 'lwd', 'xlim', 'ylim'
- \item Not needed for methods \code{summary}, \code{coef} and \code{fitted}
+ \item An optional vector of observations \code{y} (with a similar heritability as the one declared in 'SSI' function) for methods \code{summary}, \code{plot}, and \code{fitted}
 }
 }
 
@@ -69,7 +69,7 @@ Useful methods for retrieving, summarizing and visualizing important results fro
   
   fm1 = SSI(y,K=G,theta=1,b=0,tst=tst,trn=trn)
   
-  yHat = fitted(fm1)                # Predicted values for each SSI
+  uHat = fitted(fm1)                # Predicted values for each testing element
   out = summary(fm1)                # Useful function to get results
   corTST = out$accuracy             # Testing set accuracy (correlation cor(y,yHat))
   out$optCOR                        # SSI with maximum accuracy

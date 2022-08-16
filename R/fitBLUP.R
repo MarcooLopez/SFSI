@@ -1,5 +1,3 @@
-# Z=U=d=indexK = NULL; BLUP=TRUE; method=c("REML","ML")[1]; theta=NULL
-# return.Hinv = FALSE; tol=1E-5; maxiter=1000; interval=c(1E-9,1E9); warn=TRUE
 
 fitBLUP <- function(y, X = NULL, Z = NULL, K = NULL, U = NULL, d = NULL,
                     theta = NULL, BLUP = TRUE, method = c("REML","ML"),

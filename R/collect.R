@@ -28,6 +28,7 @@ collect <- function(prefix = "")
           fm$file_beta <- c(fm$file_beta, out$file_beta)
           fm$name_beta[[i]] <- out$name_beta
           fm$tst <- c(fm$tst, out$tst)
+          fm$u <- rbind(fm$u, out$u)
           fm$df <- rbind(fm$df, out$df)
           fm$lambda <- rbind(fm$lambda, out$lambda)
         }

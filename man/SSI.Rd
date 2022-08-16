@@ -9,8 +9,8 @@ SSI(y, X = NULL, b = NULL, Z = NULL, K, D = NULL,
     tst = seq_along(y), subset = NULL, alpha = 1, lambda = NULL,
     nlambda = 100, lambda.min = .Machine$double.eps^0.5,
     common.lambda = TRUE, tol = 1E-4, maxiter = 500,
-    method = c("REML","ML"), save.beta = TRUE, save.at = NULL,
-    name = NULL, mc.cores = 1, verbose = TRUE)
+    method = c("REML","ML"), return.beta = FALSE, save.beta = TRUE, 
+    save.at = NULL, name = NULL, mc.cores = 1, verbose = TRUE)
     
 SSI.CV(y, X = NULL, b = NULL, Z = NULL, K, D = NULL, 
       theta = NULL, h2 = NULL, trn = seq_along(y), alpha = 1, 
@@ -72,7 +72,9 @@ to a minimum equal to zero. If \code{alpha=0} the grid is generated starting fro
 
 \item{maxiter}{(integer) Maximum number of iterations to run the CD algorithm at each lambda step before convergence is reached}
 
-\item{save.beta}{\code{TRUE} or \code{FALSE} to whether save regression coefficients. When \code{FALSE} coefficients are returned as a list in the output object. Default \code{save.beta=TRUE} will return the path where coefficients are saved}
+\item{return.beta}{\code{TRUE} or \code{FALSE} to whether return regression coefficients in the output object}
+
+\item{save.beta}{\code{TRUE} or \code{FALSE} to whether save regression coefficients. When \code{TRUE} coefficients are not returned in the output object and instead the path where coefficients were saved is returned. They can be retrieved using \code{coef} method if at least one \code{return.beta} or \code{save.beta} is TRUE}
 
 \item{save.at}{(character) Prefix name that will be added to the files (coefficients and output object) name to be saved, this may include a path. Regression coefficients
 are saved as a binary file (single-precision: 32 bits, 7 significant digits). Default \code{save.at=NULL} will no save any output}
@@ -88,6 +90,7 @@ Function 'SSI' returns a list object of the class 'SSI' for which methods \code{
 \itemize{
   \item \code{b}: (vector) fixed effects solutions (including the intercept).
   \item \code{Xb}: (vector) product of the design matrix 'X' times the fixed effects solutions.
+  \item \code{u}: (matrix) genetic values for testing individuals (in rows) associated to each value of lambda (in columns).
   \item \code{varU}, \code{varE}, \code{h2}: variance components solutions.
   \item \code{alpha}: value for the elastic-net weights used.
   \item \code{lambda}: (matrix) sequence of values of lambda used (in columns) for each testing individual (in rows).

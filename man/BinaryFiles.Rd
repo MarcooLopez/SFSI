@@ -40,9 +40,11 @@ Save/read a numeric data as a fortran-formatted binary file at a defined precisi
   X = matrix(rnorm(5000),ncol=5)
   head(X)
   
-  # Save matrix
-  saveBinary(X,paste0(tempdir(),"/Matrix1.bin"),precision.format="double") # as double-precision
-  saveBinary(X,paste0(tempdir(),"/Matrix2.bin"),precision.format="single")  # as single-precision
+  # Save matrix as double-precision
+  saveBinary(X,paste0(tempdir(),"/Matrix1.bin"),precision.format="double")
+  
+  # Save matrix as single-precision
+  saveBinary(X,paste0(tempdir(),"/Matrix2.bin"),precision.format="single")
 
   # Read the double-precision matrix
   X2 = readBinary(paste0(tempdir(),"/Matrix1.bin"))

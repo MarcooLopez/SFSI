@@ -22,7 +22,7 @@ according to argument \code{subset}.
   Y = Y[index,]
   M = scale(M[index,])/sqrt(ncol(M))   # Subset and scale markers
   G = tcrossprod(M)                    # Genomic relationship matrix
-  y = as.vector(scale(Y[,"E1"]))  # Subset response variable
+  y = as.vector(scale(Y[,"E1"]))       # Response variable
 
   # Training and testing sets
   tst = which(Y$trial == 2)

@@ -3,17 +3,19 @@
 \alias{solveEN}
 \title{Coordinate Descent algorithm to solve Elastic-Net-type problems}
 \usage{
-solveEN(Sigma, Gamma, alpha = 1, lambda = NULL,
-        nlambda = 100, lambda.min = .Machine$double.eps^0.5,
-        common.lambda = TRUE, dfmax = NULL, scale = TRUE, 
-        tol = 1E-5, maxiter = 1000, mc.cores = 1L, 
-        save.beta = FALSE, verbose = FALSE)
+solveEN(Sigma, Gamma, X = NULL, alpha = 1, lambda = NULL,
+        nlambda = 100, common.lambda = TRUE, 
+        lambda.min = .Machine$double.eps^0.5, dfmax = NULL, 
+        scale = TRUE, tol = 1E-5, maxiter = 1000, mc.cores = 1L,
+        return.beta = TRUE, save.beta = FALSE, verbose = FALSE)
         
 }
 \arguments{
 \item{Sigma}{(numeric matrix) Variance-covariance matrix of predictors. It can be of the "float32" type as per the 'float' R-package}
 
 \item{Gamma}{(numeric matrix) Covariance between response variable and predictors. If it contains more than one column, the algorithm is applied to each column separately as different response variables}
+
+\item{X}{(numeric matrix) Optional matrix of predictors to obtain fitted values}
 
 \item{lambda}{(numeric vector) Penalization parameter sequence. Default is \code{lambda=NULL}, in this case a decreasing grid of
 \code{'nlambda'} lambdas will be generated starting from a maximum equal to
@@ -43,7 +45,9 @@ Default \code{dfmax=NULL} will calculate solutions for the entire lambda grid}
 
 \item{mc.cores}{(integer) Number of cores used. The analysis is run in parallel when \code{mc.cores} is greater than 1. Default is \code{mc.cores=1}}
 
-\item{save.beta}{\code{TRUE} or \code{FALSE} to whether save regression coefficients (in a temporary folder). When \code{save.beta=FALSE} (default) coefficients are returned in the output object. When \code{TRUE} the path where coefficients are saved is returned}
+\item{return.beta}{\code{TRUE} or \code{FALSE} to whether return regression coefficients in the output object}
+
+\item{save.beta}{\code{TRUE} or \code{FALSE} to whether save regression coefficients (in a temporary folder). When \code{TRUE} coefficients are not returned in the output object and instead the path where coefficients were saved is returned. They can be retrieved using \code{coef} method if at least one \code{return.beta} or \code{save.beta} is TRUE}
 
 \item{verbose}{\code{TRUE} or \code{FALSE} to whether printing progress}
 }
@@ -53,6 +57,7 @@ Returns a list object containing the elements:
   \item \code{lambda}: (vector) all the sequence of values of the penalty.
   \item \code{beta}: (matrix) regression coefficients for each predictor (in rows) associated to each value of the penalization parameter lambda (in columns).
   \item \code{df}: (vector) degrees of freedom, number of non-zero predictors associated to each value of lambda.
+  \item \code{yHat}: (matrix) fitted values calculated using a matrix of predictors (when argument X is not NULL), associated to each value of lambda (in columns).
 }
 The returned object is of the class 'LASSO' for which methods \code{coef} and \code{fitted} exist. Function 'path.plot' can be also used
 }

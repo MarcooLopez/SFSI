@@ -16,7 +16,10 @@
 \item{i}{(integer vector) Index columns of matrix 'Gamma' to be considered}
 }
 \value{
-Returns a matrix that contains, for each value of lambda (in columns), the predicted values corresponding to each row of the matrix \code{X} 
+Method \code{coef} returns a matrix that contains, for each value of lambda (in columns), the predicted values corresponding to each row of the matrix \code{X}.
+
+Method \code{fitted} returns fitted values
+\ifelse{html}{\out{X&beta;}}{\eqn{\textbf{X}\boldsymbol{\beta}}{X beta}}
 }
 \description{
 Predicted values for a provided matrix of predictors \code{X} 
