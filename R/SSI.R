@@ -150,13 +150,14 @@ SSI <- function(y, X = NULL, b = NULL, Z = NULL, K, D = NULL,
 
   save.beta <- ifelse(!is.null(save.at), TRUE, save.beta)
 
-  out <- solveEN(K, RHS, X=yTRN, alpha=alpha, lambda=lambda,
+  out <- solveEN(K, RHS, X=yTRN,
+                verbose=verbose, mc.cores=mc.cores,
+                alpha=alpha, lambda=lambda,
                 nlambda=nlambda, lambda.min=lambda.min,
                 common.lambda=common.lambda,
                 tol=tol, maxiter=maxiter,
-                mc.cores=mc.cores, return.beta=return.beta,
-                save.beta=save.beta,
-                verbose=verbose)
+                return.beta=return.beta,
+                save.beta=save.beta)
 
   # If 'save.at' is not NULL
   if(!is.null(save.at)){

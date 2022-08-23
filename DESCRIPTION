@@ -1,11 +1,11 @@
 Package: SFSI
 Title: Sparse Family and Selection Index
-Version: 1.2.0
+Version: 1.2.1
 Authors@R: c(
     person("Marco", "Lopez-Cruz", role = c("aut","cre"), email = "maraloc@gmail.com"),
     person("Gustavo", "de los Campos", role = c("aut"), email = "gustavoc@msu.edu"),
     person("Paulino", "Perez-Rodriguez", role = c("ctb"), email = "perpdgo@gmail.com"))
-Date: 2022-08-16
+Date: 2022-08-23
 Description: Here we provide tools for the estimation of coefficients in 
      penalized regressions when the (co)variance matrix of predictors 
      and the covariance vector between predictors and response, are 

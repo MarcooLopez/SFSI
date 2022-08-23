@@ -37,7 +37,9 @@ solveEN <- function(Sigma, Gamma, X = NULL, alpha = 1,
         X <- matrix(X, nrow=1L)
       }
       stopifnot(ncol(X) == nrow(Gamma))
+      storage.mode(X) <- "double"
     }
+    n <- ifelse(is.null(X), 0L, nrow(X))
 
     dfmax <- ifelse(is.null(dfmax), p, as.integer(dfmax))
 
@@ -93,30 +95,27 @@ solveEN <- function(Sigma, Gamma, X = NULL, alpha = 1,
       if(isfloat){
         tmp <- .Call('updatebeta', p, Sigma@Data, Gamma@Data[,ind],
                  nlambda, lambda0, alpha, tol, maxiter,
-                 dfmax, isfloat, scale, sdx, verbose2)
+                 dfmax, isfloat, scale, sdx, n, X, verbose2)
 
       }else{
         tmp <- .Call('updatebeta', p, Sigma, Gamma[,ind],
                  nlambda, lambda0, alpha, tol, maxiter,
-                 dfmax, isfloat, scale, sdx, verbose2)
+                 dfmax, isfloat, scale, sdx, n, X, verbose2)
       }
       #dyn.unload("c_utils.so")
 
       df0 <- tmp[[2]]
-
+      yHat0 <- tmp[[3]]
       if(dfmax < p){
         index <- which(df0 <= dfmax)
         lambda0 <- lambda0[index]
         df0 <- df0[index]
         beta <- Matrix::Matrix(tmp[[1]][, index, drop=FALSE], sparse=TRUE)
+        if(n > 0L){
+          yHat0 <- yHat0[, index, drop=FALSE]
+        }
       }else{
         beta <- Matrix::Matrix(tmp[[1]], sparse=TRUE)
-      }
-
-      if(!is.null(X)){
-        yHat <- X%*%as.matrix(beta)
-      }else{
-        yHat <- NULL
       }
 
       if(!return.beta){
@@ -131,7 +130,7 @@ solveEN <- function(Sigma, Gamma, X = NULL, alpha = 1,
         utils::setTxtProgressBar(pb, nchar(scan(con,what="character",quiet=TRUE))/q)
       }
 
-      list(ind=ind, yHat=yHat, beta=beta, lambda=lambda0, df=df0)
+      list(ind=ind, yHat=yHat0, beta=beta, lambda=lambda0, df=df0)
     }
 
     tmpdir0 <- tempdir()
@@ -143,9 +142,9 @@ solveEN <- function(Sigma, Gamma, X = NULL, alpha = 1,
        con <- tempfile(tmpdir=tmpdir0)
     }
     if(mc.cores == 1L){
-      out = lapply(X=seq(q),FUN=compApply)
+      out = lapply(X=seq(q), FUN=compApply)
     }else{
-      out = parallel::mclapply(X=seq(q),FUN=compApply,mc.cores=mc.cores)
+      out = parallel::mclapply(X=seq(q), FUN=compApply, mc.cores=mc.cores)
     }
     if(verbose & q>1L) {
       close(pb); unlink(con)

@@ -15,7 +15,7 @@
 // for a set of decreasing lambda: l0>l1>...>lk
 // Using the whole matrix XtX as input stored in object XL passed as vector
 //
-//      n:         Number of beta parameters
+//      p:         Number of beta parameters
 //      XtX:       Crossprod matrix X'X in vector form, stacked by columns
 //      Xty:       Crossprod vector X'y in vector form
 //      q:         Number of lambdas
@@ -23,21 +23,26 @@
 //      alpha:     alpha value in the Elastic-net problem
 //      tol:       Maximum value between two consecutive solutions for beta to be accepted for convergence
 //      maxiter:   Number of iterations to run before the updating stops
+//      n, X:      MAtrix of predictors with n rows to calculate y=X*beta
 // ----------------------------------------------------------
-SEXP updatebeta(SEXP n_, SEXP XtX_, SEXP Xty_, SEXP q_, SEXP lambda_, SEXP alpha_, SEXP tol_,
-            SEXP maxiter_, SEXP dfmax_, SEXP isfloat_, SEXP scale_, SEXP sd_, SEXP verbose_)
+SEXP updatebeta(SEXP p_, SEXP XtX_, SEXP Xty_, SEXP q_, SEXP lambda_,
+                 SEXP alpha_, SEXP tol_, SEXP maxiter_, SEXP dfmax_,
+                 SEXP isfloat_, SEXP scale_, SEXP sd_,
+                 SEXP n_, SEXP X_, SEXP verbose_)
 {
     double *lambda, *sd, alpha, tol;
     double L1, L2, error;
-    int i, j, k, n, q, maxiter, iter, verbose, scale, isfloat, dfmax;
+    int i, j, k, n, p, q, maxiter, iter, dfmax;
+    int verbose, scale, isfloat;
     int *df;
     int inc1=1;
     double delta, bOLS, bNew;
     double *B, *b, *currfit;
     double value;
-    SEXP list, df_, B_;
+    SEXP list, df_, B_, YHat_;
 
-    n=INTEGER_VALUE(n_);
+    n=INTEGER_VALUE(n_);  // Used when X (nxp) is provided to do y=XB
+    p=INTEGER_VALUE(p_);
     q=INTEGER_VALUE(q_);
     maxiter=INTEGER_VALUE(maxiter_);
     dfmax=INTEGER_VALUE(dfmax_);
@@ -56,15 +61,15 @@ SEXP updatebeta(SEXP n_, SEXP XtX_, SEXP Xty_, SEXP q_, SEXP lambda_, SEXP alpha
     df_=PROTECT(allocVector(INTSXP, q));
     df=INTEGER_POINTER(df_);
 
-    B_ = PROTECT(allocMatrix(REALSXP, n, q)); // dimension N predictors x N lambdas
+    B_ = PROTECT(allocMatrix(REALSXP, p, q)); // dimension N predictors x N lambdas
     B=NUMERIC_POINTER(B_);
 
-    b=(double *) R_alloc(n, sizeof(double));
-    currfit=(double *) R_alloc(n, sizeof(double));
+    b=(double *) R_alloc(p, sizeof(double));
+    currfit=(double *) R_alloc(p, sizeof(double));
 
-    memset(currfit, 0, sizeof(double)*n);  // Initialize all currentfit to zero
-    memset(b, 0, sizeof(double)*n);  // Initialize all coefficients to zero
-    for(j=0; j<q; j++) df[j]=n;
+    memset(currfit, 0, sizeof(double)*p);  // Initialize all currentfit to zero
+    memset(b, 0, sizeof(double)*p);  // Initialize all coefficients to zero
+    for(j=0; j<q; j++) df[j]=p;
 
     //double eps = DBL_EPSILON;
 
@@ -85,12 +90,12 @@ SEXP updatebeta(SEXP n_, SEXP XtX_, SEXP Xty_, SEXP q_, SEXP lambda_, SEXP alpha
           {
               iter++;
               error=0;
-              for(j=0; j<n; j++)
+              for(j=0; j<p; j++)
               {
-                  //bOLS=(Xty[j] - currfit)/XtX[n*j + j];
+                  //bOLS=(Xty[j] - currfit)/XtX[p*j + j];
                   bOLS=Xty[j] - currfit[j];
                   if(fabs(bOLS) > L1){
-                      bNew=sign(bOLS)*(fabs(bOLS)-L1)/(1+L2); // (XtX[n*j + j]+L2)
+                      bNew=sign(bOLS)*(fabs(bOLS)-L1)/(1+L2); // (XtX[p*j + j]+L2)
                   }else{
                       bNew=0;
                   }
@@ -98,8 +103,8 @@ SEXP updatebeta(SEXP n_, SEXP XtX_, SEXP Xty_, SEXP q_, SEXP lambda_, SEXP alpha
                   delta = bNew-b[j];
                   if(fabs(delta)>0){
                       // update the current fit for all variables: cf=cf+XtX[j]*(bNew-b[j])
-                    	for(i=0; i<n; i++){
-                        currfit[i] = currfit[i] + delta*XtX[(long long)j*(long long)n + (long long)i];
+                    	for(i=0; i<p; i++){
+                        currfit[i] = currfit[i] + delta*XtX[(long long)j*(long long)p + (long long)i];
                     	}
 
                       currfit[j] -= delta; //delta*XtX[n*j + j]
@@ -117,13 +122,15 @@ SEXP updatebeta(SEXP n_, SEXP XtX_, SEXP Xty_, SEXP q_, SEXP lambda_, SEXP alpha
               }
           }
 
-          F77_NAME(dcopy)(&n, b, &inc1, B + k*n, &inc1);
+          F77_NAME(dcopy)(&p, b, &inc1, B + k*p, &inc1);
           df[k]=0;
-          for(j=0; j<n; j++){
-            if(fabs(B[k*n + j])>0) df[k]++;
+          for(j=0; j<p; j++){
+            if(fabs(B[k*p + j])>0) df[k]++;
           }
 
-          if(dfmax<n && df[k]>=dfmax) break;
+          if(dfmax<p && df[k]>=dfmax){
+             break;
+          }
       }
     }else{
       PROTECT(XtX_=AS_NUMERIC(XtX_));
@@ -142,12 +149,12 @@ SEXP updatebeta(SEXP n_, SEXP XtX_, SEXP Xty_, SEXP q_, SEXP lambda_, SEXP alpha
           {
               iter++;
               error=0;
-              for(j=0; j<n; j++)
+              for(j=0; j<p; j++)
               {
-                  //bOLS=(Xty[j] - currfit)/XtX[n*j + j];
+                  //bOLS=(Xty[j] - currfit)/XtX[p*j + j];
                   bOLS=Xty[j] - currfit[j];
                   if(fabs(bOLS) > L1){
-                      bNew=sign(bOLS)*(fabs(bOLS)-L1)/(1+L2); // (XtX[n*j + j]+L2)
+                      bNew=sign(bOLS)*(fabs(bOLS)-L1)/(1+L2); // (XtX[p*j + j]+L2)
                   }else{
                       bNew=0;
                   }
@@ -155,9 +162,9 @@ SEXP updatebeta(SEXP n_, SEXP XtX_, SEXP Xty_, SEXP q_, SEXP lambda_, SEXP alpha
                   delta = bNew-b[j];
                   if(fabs(delta)>0){
                       // update the current fit for all variables: cf=cf+XtX[j]*(bNew-b[j])
-                      F77_NAME(daxpy)(&n, &delta, XtX + (long long)j*(long long)n, &inc1, currfit, &inc1);
+                      F77_NAME(daxpy)(&p, &delta, XtX + (long long)j*(long long)p, &inc1, currfit, &inc1);
 
-                      currfit[j] -= delta; //delta*XtX[n*j + j]
+                      currfit[j] -= delta; //delta*XtX[p*j + j]
                       if(fabs(delta)>error){
                           error=fabs(delta);
                       }
@@ -172,28 +179,50 @@ SEXP updatebeta(SEXP n_, SEXP XtX_, SEXP Xty_, SEXP q_, SEXP lambda_, SEXP alpha
               }
           }
 
-          F77_NAME(dcopy)(&n, b, &inc1, B + k*n, &inc1);
+          F77_NAME(dcopy)(&p, b, &inc1, B + k*p, &inc1);
           df[k]=0;
-          for(j=0; j<n; j++){
-            if(fabs(B[k*n + j])>0) df[k]++;
+          for(j=0; j<p; j++){
+            if(fabs(B[k*p + j])>0) df[k]++;
           }
 
-          if(dfmax<n && df[k]>=dfmax) break;
-      }
-    }
-    if(scale){
-      for(j=0; j<n; j++){
-        value=1/sd[j];
-        F77_NAME(dscal)(&q, &value, B + j, &n);
+          if(dfmax<p && df[k]>=dfmax){
+            break;
+          }
       }
     }
 
-    // Creating a list with 1 vector elements:
-    PROTECT(list = allocVector(VECSXP, 2));
+    if(scale){
+      for(j=0; j<p; j++){
+        value=1/sd[j];
+        F77_NAME(dscal)(&q, &value, B + j, &p);
+      }
+    }
+
+    if(n > 0){
+      PROTECT(X_=AS_NUMERIC(X_));
+      double *X=NUMERIC_POINTER(X_);
+
+      YHat_ = PROTECT(allocMatrix(REALSXP, n, q));
+      double *YHat=NUMERIC_POINTER(YHat_);
+
+      for(i=0; i<n; i++){
+        for(j=0; j<q; j++){
+          YHat[j*n + i]=F77_NAME(ddot)(&p, X + i, &n, B + j*p, &inc1);
+        }
+      }
+
+      i=9;
+    }else{
+      YHat_ = ScalarReal(NA_REAL);
+      i=7;
+    }
+
+    PROTECT(list = allocVector(VECSXP, 3));
     SET_VECTOR_ELT(list, 0, B_);
     SET_VECTOR_ELT(list, 1, df_);
+    SET_VECTOR_ELT(list, 2, YHat_);
 
-    UNPROTECT(7);
+    UNPROTECT(i);
 
     return(list);
 }
