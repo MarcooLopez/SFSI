@@ -74,7 +74,8 @@ LARS <- function(Sigma, Gamma, X = NULL, method=c("LAR","LAR-LASSO"),
       lambda[k] <- ifelse(isfloat, float::dbl(Cmax), Cmax)
       if(!any(drops))
       {
-        new <- abs(covar) >= Cmax-eps
+        # new <- abs(covar) >= Cmax-eps
+        new <- abs(abs(covar) - Cmax) <= eps
         covar <- covar[!new]
         new <- inactive[new]
         for(inew in new)
