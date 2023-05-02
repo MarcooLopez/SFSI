@@ -2,38 +2,46 @@
 # Prunne elements based on pairwise similarity R (correlation, R^2, etc)
 #====================================================================
 
-Prune <- function(R, threshold=0.95, D=NULL, d.max=NULL, verbose=FALSE)
+Prune <- function(R, threshold=0.95, D=NULL, d.max=NULL, MAF=NULL, verbose=FALSE)
 {
     nc <- nchar(ncol(R))
     PrFn <- function(x, nc=3)sprintf(paste0('%',nc,'d'),x)
 
-    A <- (R > threshold)
-    diag(A) <- FALSE
     pruneIn <- c()
     pruneOut <- c()
 
     if(!is.null(d.max) & is.null(D)){
-      cat("Maximum distance 'd.max' is ignored when matrix 'D=NULL'\n")
+      message("Maximum distance 'd.max' is ignored when matrix 'D=NULL'")
     }
     if(is.null(d.max) & !is.null(D)){
-      cat("Distance matrix 'D' is ignored when 'd.max=NULL'\n")
-      D <- NULL
-    }
-    if(!is.null(d.max) & !is.null(D)){
-      colnames(D) <- rownames(D) <- NULL
-      D2 <- (D <= d.max)
-      diag(D2) <- FALSE
-      A <- A & D2
+      stop("A 'd.max' value must be provided along with the distance matrix 'D'")
     }
 
+    if(is.null(D)){
+      A <- (R > threshold)
+    }else{
+      A <- (R > threshold) & (D <= d.max)
+    }
+    diag(A) <- FALSE
+    colnames(A) <- rownames(A) <- NULL
+
     if(verbose){
-      tmp <- ifelse(is.null(d.max),"",paste0(" within ",d.max," Mb"))
+      tmp <- ifelse(is.null(d.max),"",paste0(" within ",d.max," bp"))
       cat("Pruning ", ncol(R)," subjects",tmp," ...\n",sep="")
     }
 
-    ID <- 1:ncol(R)
+    if(is.null(colnames(R))){
+      ID <- 1:ncol(R)
+    }else{
+      ID <- colnames(R)
+    }
 
-    CON <- as.vector(rowSums(A))
+    if(!is.null(MAF)){
+      stopifnot(length(MAF)==nrow(R))
+      names(MAF) <- ID
+    }
+
+    CON <- rowSums(A)
     nConn <- CON[]
     remain <- 1:ncol(R)
     mc <- nchar(max(CON))
@@ -54,19 +62,25 @@ Prune <- function(R, threshold=0.95, D=NULL, d.max=NULL, verbose=FALSE)
     }
 
     CON0 <- rep(0,length(CON))
-    flag <- any(CON>0)
-    while(flag){
+    cond <- any(CON>0)
+    while(cond){
+      #CON <- CON-CON0
       if(any(CON > 0)){
-        tmp <- which.max(CON)
-        pruneIn <- c(pruneIn, ID[tmp])
-        remove <- which(A[remain[tmp],remain]) # conections with the maximum
-
+        tmp <- which(CON==max(CON))
+        if(is.null(MAF)){
+          keep <- tmp[1]
+        }else{
+          keep <- tmp[which.max(MAF[ID[tmp]])]
+        }
+        pruneIn <- c(pruneIn, ID[keep])
+        remove <- which(A[remain[keep],remain])
+        # range(R[ID[c(keep)],ID[remove]])
         pruneOut <- c(pruneOut, ID[remove])
 
         if(verbose){
           cont <- cont + 1
           cat("--------------------------------------------------------\n")
-          cat(" S",PrFn(cont),". nConn=",PrFn(CON[tmp],mc),". In: i=",PrFn(tmp,nc),
+          cat(" S",PrFn(cont),". nConn=",PrFn(CON[keep],mc),". In: i=",PrFn(keep,nc),
                 ". Out: n=",PrFn(length(remove),mc),". Remain: n=",
                 PrFn(ncol(R)-length(pruneOut)-length(pruneIn),nc),"\n",sep="")
         }
@@ -76,9 +90,9 @@ Prune <- function(R, threshold=0.95, D=NULL, d.max=NULL, verbose=FALSE)
         CON <- CON[-remove]
         ID <- ID[-remove]
         CON <- CON-CON0
-        flag=(length(remain) > 1)
+        cond=(length(remain) > 1)
       }else{
-         flag <- FALSE
+         cond <- FALSE
          tmp <- which(!ID %in% pruneIn)
          if(length(tmp)>0){
           pruneIn <- c(pruneIn, ID[tmp])
@@ -92,5 +106,5 @@ Prune <- function(R, threshold=0.95, D=NULL, d.max=NULL, verbose=FALSE)
         }
       }
     }
-    return(list(nConn=nConn, prune.in=sort(pruneIn), prune.out=sort(pruneOut)))
+    return(list(nConn=nConn, prune.in=pruneIn, prune.out=pruneOut))
 }
