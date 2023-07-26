@@ -36,7 +36,7 @@ SSI.CV <- function(y, X = NULL, b = NULL, Z = NULL, K,
      }
      stopifnot(length(trn_tst) == (n*ntraits))
      if(storage.mode(trn_tst) %in% c("double","integer")){
-       if(any( !unique(as.vector(trn_tst)) %in% c(0,1) )){
+       if(any( !unique(as.vector(trn_tst)) %in% c(0,1,NA) )){
          stop("Input 'trn_tst' must contain only 0, 1, or NA")
        }
        trn_tst <- (trn_tst == 1)
@@ -48,7 +48,9 @@ SSI.CV <- function(y, X = NULL, b = NULL, Z = NULL, K,
   storage.mode(K) <- "double"
 
   if(!is.null(Z)){
-    if(length(dim(Z)) != 2L) stop("Object 'Z' must be a matrix with nrow(Z)=n and ncol(Z)=nrow(K)")
+    if(length(dim(Z)) != 2L){
+       stop("Object 'Z' must be a matrix with nrow(Z)=n and ncol(Z)=nrow(K)")
+    }
     K <- tcrossprod(Z, tcrossprod(Z,K))   # Z%*%K%*%t(Z)
   }
 
@@ -76,20 +78,22 @@ SSI.CV <- function(y, X = NULL, b = NULL, Z = NULL, K,
       trn_tst0[map$i[i],map$j[i]] <- FALSE
     }
 
-    fm <- SSI(y, X=X, b=b, K=K, varU=varU, varE=varE, intercept=intercept,
-              trn_tst=trn_tst0, alpha=alpha, method=method,
-              lambda=lambda, nlambda=nlambda,lambda.min=lambda.min,
-              tol=tol, maxiter=maxiter,common.lambda=common.lambda,
-              mc.cores=mc.cores2, verbose=FALSE)
+    fm <- SSI(y, X=X, b=b, K=K, varU=varU, varE=varE,
+              intercept=intercept, trn_tst=trn_tst0, alpha=alpha,
+              method=method, lambda=lambda, nlambda=nlambda,
+              lambda.min=lambda.min, tol=tol, maxiter=maxiter,
+              common.lambda=common.lambda, mc.cores=mc.cores2,
+              verbose=FALSE)
 
     if(isLOOCV){
-        res <- list(u=as.vector(fitted.SSI(fm)), varU=fm$varU, varE=fm$varE,
-                   h2=fm$h2, b=fm$b, tst=tst0, nsup=fm$nsup, lambda=fm$lambda)
+        res <- list(u=as.vector(fitted.SSI(fm)), varU=fm$varU,
+                    varE=fm$varE, h2=fm$h2, b=fm$b, tst=tst0,
+                    nsup=fm$nsup, lambda=fm$lambda)
     }else{
         ss <- summary.SSI(fm)
-        res <- list(varU=fm$varU, varE=fm$varE, h2=fm$h2, b=fm$b, tst=tst0,
-                   nsup=ss$nsup, lambda=ss$lambda, nsup_trait=ss$nsup_trait,
-                   accuracy=ss$accuracy, MSE=ss$MSE)
+        res <- list(varU=fm$varU, varE=fm$varE, h2=fm$h2, b=fm$b,
+                    tst=tst0, nsup=ss$nsup, lambda=ss$lambda,
+                    nsup_trait=ss$nsup_trait, accuracy=ss$accuracy, MSE=ss$MSE)
     }
 
     if(verbose){
@@ -163,8 +167,8 @@ SSI.CV <- function(y, X = NULL, b = NULL, Z = NULL, K,
     res[[k]] <- res0
   }
 
-  out <- list(n=n, ntraits=ntraits, nlambda=nlambda, name=name, trn=trn, alpha=alpha,
-              nCV=nCV, nfolds=nfolds, seeds=seeds, CV=res)
+  out <- list(n=n, ntraits=ntraits, nlambda=nlambda, name=name, trn=trn,
+              alpha=alpha, nCV=nCV, nfolds=nfolds, seeds=seeds, CV=res)
 
   class(out) <- "SSI"
 

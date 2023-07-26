@@ -291,7 +291,7 @@ get_net <- function(X, MAP, symmetric,
   |    ._____| | | |       ._____| | .__| |__.     Marco Lopez-Cruz       |
   |    |_______| |_|       |_______| |_______|     Gustavo de los Campos  |
   |                                                                       |
-  |    Sparse Family and Selection Index. Version 1.3.0 (Jul 25, 2023)    |
+  |    Sparse Family and Selection Index. Version 1.3.0 (Jul 26, 2023)    |
   |    Type 'citation('SFSI')' to know how to cite SFSI                   |
   |    Type 'help(package='SFSI',help_type='html')' to see help           |
   |    Type 'browseVignettes('SFSI')' to see documentation                |

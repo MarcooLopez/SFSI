@@ -7,7 +7,7 @@
 
 The SFSI R-package solves penalized regression problems offering tools for the solutions to penalized selection indices. In this repository we maintain the latest (developing) version.
 
-*Last update: Jul 25, 2023*
+*Last update: Jul 26, 2023*
 
 ## Package installation
 

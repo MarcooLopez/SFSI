@@ -32,7 +32,7 @@ SSI <- function(y, X = NULL, b = NULL, Z = NULL, K,
     }
     stopifnot(length(trn_tst) == (n*ntraits))
     if(storage.mode(trn_tst) %in% c("double","integer")){
-      if(any( !unique(as.vector(trn_tst)) %in% c(0,1) )){
+      if(any( !unique(as.vector(trn_tst)) %in% c(0,1,NA) )){
         stop("Input 'trn_tst' must contain only 0, 1, or NA")
       }
       trn_tst <- (trn_tst == 1)
@@ -41,29 +41,17 @@ SSI <- function(y, X = NULL, b = NULL, Z = NULL, K,
   }
   dimnames(trn_tst) <- NULL
 
-  MAP <- data.frame(index=seq(ntraits*n),reshape2::melt(trn_tst))
-  MAP$value <- c("tst","trn")[as.numeric(MAP$value)+1]
-  colnames(MAP) <- c("index","i","j","set")
-  MAP$index_set <- NA
-
-  tst.index <- data.frame(i=rep(seq(n),ntraits), j=rep(seq(ntraits),each=n))
   trn <- which(as.vector(trn_tst))
-  MAP[trn,"index_set"] <- seq_along(trn)
 
   if(any(!trn_tst)){  # If any testing set
     tst <- which(as.vector(!trn_tst))
-    MAP[tst,"index_set"] <- seq_along(tst)
-    tst.index <- data.frame(tst.index[tst,], index=1:length(tst))
   }else{
     if(verbose){
       message(" No testing set was found. The SSI will be fitted to the entire data set")
     }
-    tst.index <- data.frame(tst.index, index=seq(nrow(tst.index)))
-    MAP[trn,"set"] <- "trn_tst"
     tst <- trn[]
   }
   nTST <- length(tst)
-  rownames(tst.index) <- NULL
 
   storage.mode(K) <- "double"
 
@@ -188,10 +176,11 @@ SSI <- function(y, X = NULL, b = NULL, Z = NULL, K,
   }
 
   # Getting K <- varU*G and H <- varU*G + varE*I
-  K <- kronecker(varU, K)
   if(ntraits == 1L){
+    K <- varU*K
     H <- penalize_cov(K, lambda=varE, inplace=FALSE)
   }else{
+    K <- kronecker(varU, K)
     H <- K + kronecker(varE, diag(n))
   }
   H <- H[trn, trn]
@@ -283,7 +272,7 @@ SSI <- function(y, X = NULL, b = NULL, Z = NULL, K,
               labels=labels, name=name, nlambda=nlambda,
               y=y, Xb=Xb, u=u, yHat=yHat,
               b=b, varU=varU, varE=varE, h2=h2,
-              trn=trn, tst=tst, MAP=MAP, tst.index=tst.index, alpha=alpha,
+              trn=trn, tst=tst, alpha=alpha,
               nsup = nsup0, lambda = lambda0,
               beta = out$beta,
               file_beta=out$file_beta,
