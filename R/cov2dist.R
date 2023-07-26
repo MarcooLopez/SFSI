@@ -1,33 +1,66 @@
 
 # Covariance matrix to distance matrix
 
-cov2dist <- function(V, void = FALSE)
+cov2dist <- function(A, a = 1, inplace = FALSE,
+                     n = NULL, uplo = NULL, byrow = NULL)
 {
-    if((sum(dim(V))/2)^2 != length(V)) stop("Object 'V' must be a squared matrix")
-    if(!float::storage.mode(V) %in% c("double","float32")) storage.mode(V) <- "double"
-
-    p <- ncol(V)
-    isfloat <- as.logical(float::storage.mode(V)=="float32")
-
-    #dyn.load("c_utils.so")
-    if(void){
-      if(isfloat){
-       out <- .Call('cov2distance', p, V@Data, isfloat)
-      }else{
-       out <- .Call('cov2distance', p, V, isfloat)
+    dm <- dim(A)
+    if(length(dm) == 2L){
+      if(dm[1] != dm[2]){
+        stop("Input 'A' must be a squared matrix")
       }
+      n <- dm[1]
+      type <- "full"
     }else{
-      if(isfloat){
-       out <- V@Data[]
-     }else{
-       out <- V[]
-     }
+      if(is.null(n)){
+        if('n' %in% names(attributes(A))){
+          n <- attr(A, "n")
+        }else{
+          stop("Dimension 'n' of the matrix must be provided")
+        }
+      }
+      if(length(A) != (n*(n+1)/2)){
+        stop("Input 'A' must contain n(n+1)/2 entries when is not a matrix")
+      }
 
-     tmp <- .Call('cov2distance', p, out, isfloat)
-     if(isfloat){
-        out <- float::float32(out)
-     }
-   }
-   #dyn.unload("c_utils.so")
-   out
+      if('uplo' %in% names(attributes(A))){
+        type <- attr(A, "uplo")
+      }else{
+        if(is.null(uplo)){
+          stop("Parameter 'uplo' must be specified: either 'upper' or 'lower'")
+        }
+        type <- uplo
+      }
+
+      if('byrow' %in% names(attributes(A))){
+        byrow <- attr(A, "byrow")
+      }else{
+        if(is.null(byrow)){
+          stop("Parameter 'byrow' whether data is stored by row must be must be specified")
+        }
+      }
+    }
+
+    type <- ifelse(type=="full",0L,ifelse(type=="upper",1L,2L))
+
+    #isBigMatrix <- bigmemory::is.big.matrix(A)
+    isBigMatrix <- FALSE
+
+    if(isBigMatrix){
+      message(" Routine 'cov2dist' is not implemented yet for 'bigmatrix'")
+      #stopifnot(bigmemory::typeof(A) == "double")
+
+    }else{
+      #if(storage.mode(A) != "double") storage.mode(A) <- "double"
+      #dyn.load("c_cov2dist.so")
+      if(inplace){
+        out <- .Call('R_cov2dist', n, A, a, type, byrow)
+      }else{
+        out <- A[]
+        tmp <- .Call('R_cov2dist', n, out, a, type, byrow)
+      }
+      #dyn.unload("c_cov2dist.so")
+    }
+
+    invisible(out)
 }

@@ -1,12 +1,24 @@
-SOURCES = c_utils.c init.c
-
-OBJECTS = c_utils.o init.o
-
 PKG_LIBS =  $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 
 PKG_CFLAGS = -I.
-  
+
+R_SOURCES = \
+			c_functions.o \
+			c_cov2cor.o \
+			c_cov2dist.o \
+			c_penalize_cov.o \
+			c_lasso.o \
+			c_blup.o \
+			c_prune.o \
+			c_triangular.o \
+			init.o \
+			utils/utils.o
+
+OBJECTS = $(R_SOURCES)
+
 all: $(SHLIB)
 
+$(SHLIB): $(OBJECTS)
+
 clean:
-	@rm -f $(OBJECTS)
+		@rm -f $(OBJECTS)

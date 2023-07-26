@@ -1,7 +1,8 @@
-\name{BinaryFiles}
+
+\name{1. Save/read binary files}
 \alias{readBinary}
 \alias{saveBinary}
-\title{Binary files}
+\title{Save/read binary files}
 \usage{
 saveBinary(X, file = paste0(tempdir(), "/file.bin"), 
            precision.format = c("double","single"), 
@@ -16,8 +17,7 @@ readBinary(file = paste0(tempdir(), "/file.bin"),
 
 \item{file}{(character) Name of the binary file to save/read}
 
-\item{precision.format}{(character) Either 'single' or 'double' for single (4 bytes) or double precision (8 bytes), respectively,
-that matrix to save will occupy}
+\item{precision.format}{(character) Either 'single' or 'double' for numeric precision and memory occupancy (4 bytes/32-bit or 8 bytes/64-bit, respectively) of the matrix to save}
 
 \item{index.row}{(integer vector) Which rows are to be read from the file. Default \code{index.row=NULL} will read all the rows}
 
@@ -35,38 +35,39 @@ Save/read a numeric data as a fortran-formatted binary file at a defined precisi
 }
 \examples{
   require(SFSI)
+  data(wheatHTP)
 
-  # Simulate matrix
-  X = matrix(rnorm(5000),ncol=5)
-  head(X)
+  # Read a numeric matrix
+  X = scale(X_E1)
+  X[1:10,1:5]
   
   # Save matrix as double-precision
-  saveBinary(X,paste0(tempdir(),"/Matrix1.bin"),precision.format="double")
+  filename1 = paste0(tempdir(),"/Matrix1.bin")
+  saveBinary(X, filename1, precision.format="double")
   
   # Save matrix as single-precision
-  saveBinary(X,paste0(tempdir(),"/Matrix2.bin"),precision.format="single")
+  filename2 = paste0(tempdir(),"/Matrix2.bin")
+  saveBinary(X, filename2, precision.format="single")
 
   # Read the double-precision matrix
-  X2 = readBinary(paste0(tempdir(),"/Matrix1.bin"))
-  head(X2)
-  max(abs(X-X2))     # No loss of precision
-  object.size(X2)    # Size of the object
+  X2 = readBinary(filename1)
+  X2[1:10,1:5]
+  max(abs(X-X2))             # No loss of precision
+  file.info(filename1)$size  # Size of the file
 
   # Read the single-precision matrix
-  X3 = readBinary(paste0(tempdir(),"/Matrix2.bin"))
-  head(X3)
-  max(abs(X-X3))     # Loss of precision
-  object.size(X3)    # But smaller-size object
+  X3 = readBinary(filename2)
+  X3[1:10,1:5]
+  max(abs(X-X3))             # Loss of precision
+  file.info(filename2)$size  # But smaller-size file
 
   # Read specific rows and columns
   index.row = c(2,4,5,8,10)
   index.col = c(1,2,5)
-  X2 = readBinary(paste0(tempdir(),"/Matrix1.bin"),index.row=index.row,index.col=index.col)
+  X2 = readBinary(filename1,index.row=index.row,index.col=index.col)
   X2
   # Equal to: 
   X[index.row,index.col]
 
 }
-\author{
-Marco Lopez-Cruz (\email{maraloc@gmail.com}) and Gustavo de los Campos
-}
+
