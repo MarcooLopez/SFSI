@@ -1,7 +1,7 @@
 # SFSI: Sparse Family and Selection Indices
 
 [![CRAN status](https://www.r-pkg.org/badges/version/SFSI?color=green)](https://CRAN.R-project.org/package=SFSI)
-[![CRAN checks](https://cranchecks.info/badges/worst/SFSI)](https://cran.r-project.org/web/checks/check_results_SFSI.html)
+[![CRAN checks](https://cranchecks.info/badges/worst/SFSI.svg)](https://cran.r-project.org/web/checks/check_results_SFSI.html)
 [![Downloads](https://cranlogs.r-pkg.org/badges/grand-total/SFSI)](http://www.r-pkg.org/pkg/SFSI)
 [![Downloads/month](http://cranlogs.r-pkg.org/badges/SFSI?color=blue)](http://www.r-pkg.org/pkg/SFSI)
 
