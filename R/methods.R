@@ -91,7 +91,7 @@ coef.LASSO <- function(object, ...)
         indexcol <- ilambda[k]
       }
       BETA[[k]] <- readBinary(gsub("i_\\*.bin$",tmp,object$file_beta),
-                              index.col=indexcol, verbose=FALSE)
+                              cols=indexcol, verbose=FALSE)
     }
   }
 

@@ -1,4 +1,4 @@
-### Version 1.3.0 (Jul-26-2023)
+### Version 1.3.0 (Aug-13-2023)
 
 **New features**
 
@@ -7,6 +7,7 @@
   - Function 'SSI' is extended to the multi-trait case if input 'y' has more than one column. In this case within-trait genetic/residual covariances varU and varE are calculated using function 'getGenCov' when are not provided
   - Arguments 'trn' and 'tst' in function 'SSI(...,trn,tst)' can be be now passed as 'SSI(...,trn_tst)', where 'trn_tst' can be a vector with 0's (for tst) and 1's (for trn)
   - New function 'prune' added (see manual)
+  - New functions to work with triangular matrices added (see manual)
 
 ### Version 1.2.0 (Aug-16-2022)
 

@@ -4,6 +4,8 @@ double soft_threshold(double z, double penalty);
 
 int imax_integer(int n, int *x);
 
+int all_equal(long long n1, int *set1, long long n2, int *set2);
+
 void matrix_vector_product(int nrow,
                            int ncol,
                            double *a,
@@ -60,7 +62,7 @@ void matrix_vector_product_subset(int nrow,
                                  double *work);
 
 void append_to_sorted_vector_integer(int n,
-                                    int *v, 
+                                    int *v,
                                     int k,
                                     int *values);
 
@@ -68,3 +70,61 @@ void reduce_vector_integer(int n,
                            int *v,
                            int k,
                            int *index);
+
+double ij_tri_diag1(double *A, long long i, long long j);
+
+double ij_tri_nodiag1(double *A, long long i, long long j);
+
+double ij_tri_diag2(int nA, double *A, long long i, long long j);
+
+double ij_tri_nodiag2(int nA, double *A, long long i, long long j);
+
+void make_kronecker_full_full(int case_set, long long nrow, long long ncol,
+                              int nrowA, int ncolA, double *A,
+                              int nrowB, int ncolB, double *B,
+                              int *posArow, int *posBrow, int *posAcol, int *posBcol,
+                              int *irow, int *icol, double *out);
+
+void make_kronecker_tri_full1(int case_set, long long nrow, long long ncol,
+                              int nrowA, double *A, int nrowB, double *B, int diag,
+                              int *posArow, int *posBrow, int *posAcol, int *posBcol,
+                              int *irow, int *icol, double *out);
+
+void make_kronecker_tri_full2(int case_set, long long nrow, long long ncol,
+                              int nrowA, double *A, int nrowB, double *B, int diag,
+                              int *posArow, int *posBrow, int *posAcol, int *posBcol,
+                              int *irow, int *icol, double *out);
+
+void make_kronecker_tri_tri1_totri(long long n,
+                                   int nA, double *A, int nB, double *B,
+                                   int diag, int *posA, int *posB,
+                                   int nindex, int *index, double *out);
+
+void make_kronecker_tri_tri1(int case_set, long long nrow, long long ncol,
+                             int nrowA, double *A, int nrowB, double *B, int diag,
+                             int *posArow, int *posBrow, int *posAcol, int *posBcol,
+                             int *irow, int *icol, double *out);
+
+void make_kronecker_tri_tri2_totri(long long n,
+                                   int nA, double *A, int nB, double *B,
+                                   int diag, int *posA, int *posB,
+                                   int nindex, int *index, double *out);
+
+void make_kronecker_tri_tri2(int case_set, long long nrow, long long ncol,
+                             int nrowA, double *A, int nrowB, double *B, int diag,
+                             int *posArow, int *posBrow, int *posAcol, int *posBcol,
+                             int *irow, int *icol, double *out);
+
+void subset_tri1(int n, int nA, double *A, int diag,
+                int nindex, int *index, double *out);
+
+void subset_tri2(int n, int nA, double *A, int diag,
+                int nindex, int *index, double *out);
+
+void unpack_tri1(int case_set, long long nrow, long long ncol,
+                int nA, double *A, int diag,
+                int *irow, int *icol, double *out);
+
+void unpack_tri2(int case_set, long long nrow, long long ncol,
+                int nA, double *A, int diag,
+                int *irow, int *icol, double *out);

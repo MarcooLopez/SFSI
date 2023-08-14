@@ -281,6 +281,84 @@ get_net <- function(X, MAP, symmetric,
 
 #====================================================================
 #====================================================================
+
+info_matrix <- function(A, check = TRUE)
+{
+  nrows <- ncols <- type <- byrow <- diag <- NA
+  dm <- dim(A)
+  if(length(dm) == 2L){
+    if(dm[1] == dm[2]){
+      diag <- TRUE
+    }
+    nrows <- dm[1]
+    ncols <- dm[2]
+    type <- "full"
+  }else{
+    n <- type <- byrow <- diag <- NULL
+    if('n' %in% names(attributes(A))){
+      n <- attr(A, "n")
+    }else{
+      if(check){
+        stop("Set attribute 'n' (dimension of the matrix) as \"attr(A, 'n') <- \"")
+      }
+    }
+    if(!is.null(n)){
+      if(as.integer(n) != n){
+        stop("Dimmension 'n' must be a positive integer")
+      }
+      if(length(A)==(n*(n+1)/2) | length(A)==(n*(n-1)/2)){
+        diag <- ifelse(length(A)==n*(n+1)/2, TRUE, FALSE)
+      }else{
+        stop("Input 'A' must contain either n(n+1)/2 or n(n-1)/2 entries")
+      }
+    }
+
+    if('uplo' %in% names(attributes(A))){
+      type <- attr(A, "uplo")
+    }else{
+      if(check){
+        stop("Set attribute 'uplo': either \"attr(A, 'uplo') = 'upper'\" or \"= 'lower'\"")
+      }
+    }
+    if(!is.null(type)){
+      if(!type %in% c("upper","lower")){
+        stop("Attribute 'uplo' must be either 'upper' or 'lower'")
+      }
+    }
+
+    if('byrow' %in% names(attributes(A))){
+      byrow <- attr(A, "byrow")
+    }else{
+      if(check){
+        stop("Set attribute 'byrow': either \"attr(A, 'byrow') <- TRUE\" or \"<- FALSE\"")
+      }
+    }
+    if(!is.null(byrow)){
+      if(!is.logical(byrow)){
+        stop("Attribute 'byrow' must be of the logical type (TRUE or FALSE)")
+      }
+    }
+    nrows <- ncols <- n
+  }
+
+  return(list(nrows=nrows, ncols=ncols, type=type, diag=diag, byrow=byrow))
+}
+
+#====================================================================
+#====================================================================
+
+isTri <- function(A){
+  if(length(dim(A))!=2L){
+    out <- all(c("uplo","n","include.diag","byrow") %in% names(attributes(A)))
+  }else{
+    out <- FALSE
+  }
+  return(out)
+}
+
+#====================================================================
+#====================================================================
+
 .onAttach <- function(libname, pkgname) {
   packageStartupMessage("
   |=======================================================================|
@@ -291,7 +369,7 @@ get_net <- function(X, MAP, symmetric,
   |    ._____| | | |       ._____| | .__| |__.     Marco Lopez-Cruz       |
   |    |_______| |_|       |_______| |_______|     Gustavo de los Campos  |
   |                                                                       |
-  |    Sparse Family and Selection Index. Version 1.3.0 (Jul 26, 2023)    |
+  |    Sparse Family and Selection Index. Version 1.3.0 (Aug 13, 2023)    |
   |    Type 'citation('SFSI')' to know how to cite SFSI                   |
   |    Type 'help(package='SFSI',help_type='html')' to see help           |
   |    Type 'browseVignettes('SFSI')' to see documentation                |

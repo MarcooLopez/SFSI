@@ -6,155 +6,61 @@
 #include <string.h>
 #include <R_ext/Lapack.h>
 #include "SFSI.h"
-//#include "utils_all.c"
+//#include "utils.c"
 
-//====================================================================
-// Functions used by the 'readBinary' routine
-//====================================================================
-void read_integer(FILE *f, long long start, long long ncol, long long nrow,
-                 long long n, long long p,
-                 int *X, int varsize, int nsetrow, int *setrow,
-                 int nsetcol, int *setcol, int *nerror){
-  long long i, j;
-  int *line;
-  size_t out=0;
 
-  fseeko(f, 0, SEEK_END);
-  if((nrow*ncol*(long long)varsize + start)==ftello(f))
-  {
-    fseeko(f, start, SEEK_SET);
-
-    if(nsetrow>0){
-     line = (int *) R_alloc(nrow, sizeof(int));
+char* format_file_size(long long file_size)
+{
+  char *ns[4] = {"Gb", "Mb", "Kb", "bytes"};
+  int k = 0;
+  for(int i=0; i<4; i++){
+    if(((double)file_size/pow(1000,3.0-i))>1){
+      k = i;
+      break;
     }
-
-    for(j=0; j<p; j++){
-      if(nsetcol > 0){
-        fseeko(f, start + nrow*(long long)varsize*((long long)setcol[j]-1), SEEK_SET);
-      }
-
-      if(nsetrow>0){
-         out+=fread(line, varsize, nrow, f);
-         for(i=0; i<n; i++){
-           X[n*j + i] = line[setrow[i]-1];
-         }
-      }else{
-         out+=fread(X + n*j, varsize, nrow, f);
-      }
-    }
-    if(out != (nrow*p)){
-      Rprintf("  Error: Something went wrong when reading data from file");
-      (*nerror)++;
-    }
-  }else{
-    Rprintf("  Error: The function failed to read data from file\n");
-    (*nerror)++;
   }
-}
+  double fs = (double)file_size/pow(1000,3.0-k);
+  char *out = (char*)malloc(100*sizeof(char));;
+  sprintf(out,"%.2f",fs);
+  strcat(out, " ");
+  strcat(out, ns[k]);
 
-//====================================================================
-
-void read_double(FILE *f, long long start, long long ncol, long long nrow,
-                 long long n, long long p,
-                 double *X, int varsize, int nsetrow, int *setrow,
-                 int nsetcol, int *setcol, int *nerror){
-  long long i, j;
-  size_t out=0;
-  double *linedouble=NULL;
-  float *linefloat=NULL;
-
-  fseeko(f, 0, SEEK_END);
-  if((nrow*ncol*(long long)varsize + start)==ftello(f))
-  {
-    fseeko(f, start, SEEK_SET);
-
-    if(varsize == sizeof(double)){
-      if(nsetrow>0){
-        linedouble = (double *) R_alloc(nrow, sizeof(double));
-      }
-    }else{
-      linefloat = (float *) R_alloc(nrow, sizeof(float));
-    }
-
-    if(varsize == sizeof(double)){
-      for(j=0; j<p; j++){
-        if(nsetcol > 0){
-          fseeko(f, start + nrow*(long long)varsize*((long long)setcol[j]-1), SEEK_SET);
-        }
-
-        if(nsetrow>0){
-           out+=fread(linedouble, varsize, nrow, f);
-           for(i=0; i<n; i++){
-             X[n*j + i] = linedouble[setrow[i]-1];
-           }
-        }else{
-           out+=fread(X + n*j, varsize, nrow, f);
-        }
-      }
-    }else{
-      for(j=0; j<p; j++){
-        if(nsetcol > 0){
-          fseeko(f, start + nrow*(long long)varsize*((long long)setcol[j]-1), SEEK_SET);
-        }
-
-        out+=fread(linefloat, varsize, nrow, f);
-        if(nsetrow>0){
-          for(i=0; i<n; i++){
-            X[n*j + i] = (double)linefloat[setrow[i]-1];
-          }
-        }else{
-          for(i=0; i<n; i++){
-            X[n*j + i] = (double)linefloat[i];
-          }
-        }
-      }
-    }
-    if(out!=(nrow*p)){
-      Rprintf("  Error: Something went wrong when reading data from file");
-      (*nerror)++;
-    }
-  }else{
-    Rprintf("  Error: The function failed to read data from file\n");
-    (*nerror)++;
-  }
+  return(out);
 }
 
 //====================================================================
 // vartype: 1:integer, 2: logical, 3: double
 //====================================================================
 SEXP R_writeBinFile(SEXP filename_,
-                    SEXP nrow_,
-                    SEXP ncol_,
-                    SEXP X_,
-                    SEXP doubleprecision_)
+                    SEXP nrow_, SEXP ncol_, SEXP X_,
+                    SEXP doubleprecision_,
+                    SEXP verbose_)
 {
     FILE *f=NULL;
-    long long i, j;
-    long long n, p;
-    int varsize, vartype;
+    long long i, j, tmp;
+    int varsize = 0, vartype = 0;
     float valuefloat;
-    SEXP list;
+    size_t cont;
+    char *type = NULL;
 
     int nrow=INTEGER_VALUE(nrow_);
     int ncol=INTEGER_VALUE(ncol_);
     int doubleprecision=asLogical(doubleprecision_);
-
-    varsize=0;  // Initialize value
-    vartype=0;  // Initialize value
+    int verbose=asLogical(verbose_);
 
     f=fopen(CHAR(STRING_ELT(filename_,0)),"wb");
     fwrite(&nrow, sizeof(int), 1, f);
     fwrite(&ncol, sizeof(int), 1, f);
 
-    n = (long long)nrow;
-    p = (long long)ncol;
-    if(p == 0){
-      p = 1;
-    }
+    int ismatrix = ncol > 0 ? 1 : 0;
+    ncol = (ncol == 0) ? 1 : ncol;
 
+    cont = 0;
     if(TYPEOF(X_) == INTSXP || TYPEOF(X_) == LGLSXP)
     {
       vartype = TYPEOF(X_) ==  INTSXP ? 1 : 2;
+      type = TYPEOF(X_) ==  INTSXP ? "integer" : "logical";
+      //Rprintf(" Writting variable of '%s' type ...\n",type);
 
       PROTECT(X_=AS_INTEGER(X_));
       int *X=INTEGER_POINTER(X_);   // An integer pointer is also used if is FLOAT
@@ -162,14 +68,17 @@ SEXP R_writeBinFile(SEXP filename_,
       fwrite(&vartype, sizeof(int), 1, f);
       fwrite(&varsize, sizeof(int), 1, f);
 
-      for(j=0; j<p; j++){
-        fwrite(X + n*j, varsize, n, f);
+      //Rprintf(" Writting lines ...\n");
+      for(j=0; j<ncol; j++){
+        cont += fwrite(X + (long long)nrow*j, varsize, nrow, f);
       }
 
     }else{
       if(TYPEOF(X_) == REALSXP)
       {
         vartype = 3;
+        type = "numeric";
+        //Rprintf(" Writting variable of '%s' type ...\n",type);
         PROTECT(X_=AS_NUMERIC(X_));
         double *X=NUMERIC_POINTER(X_);
 
@@ -179,161 +88,316 @@ SEXP R_writeBinFile(SEXP filename_,
           fwrite(&vartype, sizeof(int), 1, f);
           fwrite(&varsize, sizeof(int), 1, f);
 
-          for(j=0; j<p; j++){
-            fwrite(X + n*j, varsize, n, f);
+          //Rprintf(" Writting lines ...\n");
+          for(j=0; j<ncol; j++){
+            cont += fwrite(X + (long long)nrow*j, varsize, nrow, f);
           }
         }else{
           varsize = sizeof(float);
           fwrite(&vartype, sizeof(int), 1, f);
           fwrite(&varsize, sizeof(int), 1, f);
 
-          for(j=0; j<p; j++){
-            for(i=0; i<n; i++){
-              valuefloat = X[n*j + i];
-              fwrite(&valuefloat, varsize, 1, f);
+          for(j=0; j<ncol; j++){
+            for(i=0; i<nrow; i++){
+              valuefloat = X[(long long)nrow*j + i];
+              cont += fwrite(&valuefloat, varsize, 1, f);
             }
           }
         }
 
       }else{
-        Rprintf("  File can not be saved with the current type format\n");
+        Rprintf(" File can not be saved with the current type format\n");
       }
     }
     fclose(f);
+    //Rprintf(" Done with saving file ...\n",type);
 
-    PROTECT(list = Rf_allocVector(VECSXP, 4));
+    tmp = (long long)nrow*(long long)ncol;
+    if(cont == tmp){
+      if(verbose){
+        tmp = tmp*varsize + 4*sizeof(int);  // File size
+        //char *fs = format_file_size(tmp);
 
-    SET_VECTOR_ELT(list, 0, ScalarInteger(n));
-    SET_VECTOR_ELT(list, 1, ScalarInteger(p));
-    SET_VECTOR_ELT(list, 2, ScalarInteger(vartype));
-    SET_VECTOR_ELT(list, 3, ScalarInteger(varsize));
+        Rprintf(" Saved file: '%s'\n",CHAR(STRING_ELT(filename_,0)));
+        if(ismatrix){
+          Rprintf(" Dimension: %d x %d\n",nrow, ncol);
+        }else{
+          Rprintf(" Dimension: %d\n",nrow);
+        }
+        Rprintf(" Data type: %s\n",type);
+        Rprintf(" Data size: %d bytes\n",varsize);
+        Rprintf(" File size: %s\n",format_file_size(tmp));
+      }
 
-    UNPROTECT(2);
+    }else{
+      Rprintf("  Error: The function failed to write data to file\n");
+    }
 
-    return(list);
+    UNPROTECT(1);
+
+    return(R_NilValue);
+}
+
+//====================================================================
+// Functions used by the 'readBinary' routine
+//====================================================================
+void read_integer(FILE *f, long long start, long long ncol, long long nrow,
+                  long long n, long long p,
+                  int *X, int varsize, int nirow, int *irow,
+                  int nicol, int *icol, int *status){
+  long long i, j;
+  int *line;
+  size_t cont = 0;
+
+  if(nirow>0){
+   line = (int *) R_alloc(nrow, sizeof(int));
+  }
+
+  for(j=0; j<p; j++){
+    if(nicol > 0){
+      fseeko(f, start + nrow*(long long)varsize*(long long)icol[j], SEEK_SET);
+    }
+
+    if(nirow>0){
+       cont += fread(line, varsize, nrow, f);
+       for(i=0; i<n; i++){
+         X[n*j + i] = line[irow[i]];
+       }
+    }else{
+       cont += fread(X + n*j, varsize, nrow, f);
+    }
+  }
+  status[0] = (cont == (nrow*p)) ? 0 : 1;
+
+}
+
+//====================================================================
+
+void read_double(FILE *f, long long start, long long ncol, long long nrow,
+                 long long n, long long p,
+                 double *X, int varsize, int nirow, int *irow,
+                 int nicol, int *icol, int *status){
+  long long i, j;
+  size_t cont = 0;
+  double *linedouble=NULL;
+  float *linefloat=NULL;
+
+  if(varsize == sizeof(double)){
+    if(nirow>0){
+      linedouble = (double *) R_alloc(nrow, sizeof(double));
+    }
+  }else{
+    linefloat = (float *) R_alloc(nrow, sizeof(float));
+  }
+
+  if(varsize == sizeof(double)){
+    for(j=0; j<p; j++){
+      if(nicol > 0){
+        fseeko(f, start + nrow*(long long)varsize*(long long)icol[j], SEEK_SET);
+      }
+
+      if(nirow>0){
+         cont += fread(linedouble, varsize, nrow, f);
+         for(i=0; i<n; i++){
+           X[n*j + i] = linedouble[irow[i]];
+         }
+      }else{
+         cont += fread(X + n*j, varsize, nrow, f);
+      }
+    }
+  }else{
+    for(j=0; j<p; j++){
+      if(nicol > 0){
+        fseeko(f, start + nrow*(long long)varsize*(long long)icol[j], SEEK_SET);
+      }
+
+      cont += fread(linefloat, varsize, nrow, f);
+      if(nirow>0){
+        for(i=0; i<n; i++){
+          X[n*j + i] = (double)linefloat[irow[i]];
+        }
+      }else{
+        for(i=0; i<n; i++){
+          X[n*j + i] = (double)linefloat[i];
+        }
+      }
+    }
+  }
+  status[0] = (cont == (nrow*p)) ? 0 : 1;
+
 }
 
 //====================================================================
 //====================================================================
 
-SEXP R_readBinFile(SEXP filename_,
-                   SEXP setrow_,
-                   SEXP setcol_)
+SEXP R_readBinFile(SEXP filename_, SEXP irow_, SEXP icol_, SEXP drop_,
+                   SEXP verbose_)
 {
     FILE *f=NULL;
-    int *setrow, *setcol;
+    int *irow, *icol;
     int varsize, vartype;
-    int intval;
-    int ismatrix;
-    int nerror=0;
-    long long nrow, ncol, n, p;
-    size_t out;
+    long long tmp;
+    int nrow, ncol, n, p;
+    size_t cont;
+    char *type;
+    int nprotect = 2;
 
-    SEXP list;
-    SEXP X_=NULL;
+    int drop=asLogical(drop_);
+    int verbose=asLogical(verbose_);
+    int nirow=Rf_isNull(irow_) ? 0 : XLENGTH(irow_);
+    int nicol=Rf_isNull(icol_) ? 0 : XLENGTH(icol_);
+    SEXP X_ = NULL;
 
-    int nsetrow=Rf_isNull(setrow_) ? 0 : XLENGTH(setrow_);
-    int nsetcol=Rf_isNull(setcol_) ? 0 : XLENGTH(setcol_);
+    PROTECT(irow_=AS_INTEGER(irow_));
+    irow=INTEGER_POINTER(irow_);
 
-    PROTECT(setrow_=AS_INTEGER(setrow_));
-    setrow=INTEGER_POINTER(setrow_);
-
-    PROTECT(setcol_=AS_INTEGER(setcol_));
-    setcol=INTEGER_POINTER(setcol_);
+    PROTECT(icol_=AS_INTEGER(icol_));
+    icol=INTEGER_POINTER(icol_);
 
     f=fopen(CHAR(STRING_ELT(filename_,0)),"rb");
 
-    out=fread(&intval, sizeof(int), 1, f);
-    nrow = (long long)intval;
-    out+=fread(&intval, sizeof(int), 1, f);
-    ncol = (long long)intval;
-    out+=fread(&vartype, sizeof(int), 1, f);
-    out+=fread(&varsize, sizeof(int), 1, f);
+    cont = fread(&nrow, sizeof(int), 1, f);
+    cont += fread(&ncol, sizeof(int), 1, f);
+    cont += fread(&vartype, sizeof(int), 1, f);
+    cont += fread(&varsize, sizeof(int), 1, f);
 
-    ismatrix = ncol > 0 ? 1 : 0;
-    if(ncol == 0){
-      ncol = 1;
+    int ismatrix = ncol > 0 ? 1 : 0;
+    ncol = (ncol == 0) ? 1 : ncol;
+
+    if(cont != 4){
+      Rprintf(" Error: The function failed to read data information\n");
+      UNPROTECT(nprotect);
+      return(R_NilValue);
     }
 
-    if(out < 4){
-      Rprintf("  Error: The function failed to read data information\n");
-      nerror++;
+    int start = 4*sizeof(int);
+    fseeko(f, 0, SEEK_END);
+    if(((long long)nrow*(long long)ncol*(long long)varsize + start) != ftello(f)){
+      Rprintf(" Error: file does not have %d x %d (nrows x ncols) elements\n",nrow,ncol);
+      UNPROTECT(nprotect);
+      return(R_NilValue);
     }
+    fseeko(f, start, SEEK_SET);
 
     // Check if any index is larger than n or p
-    if(nsetrow > 0){
-       intval =  setrow[imax_integer(nsetrow, setrow)];
-       //Rprintf("  Max index row=%d",intval);
-       if(intval > nrow){
-         Rprintf("  Error in reading row %d: file contains only %d rows\n",intval,nrow);
-         nerror++;
+    if(nirow > 0){
+       tmp =  irow[imax_integer(nirow, irow)]+1;
+       //Rprintf("  Max index row=%d\n",itmp);
+       if(tmp > nrow){
+         Rprintf(" Error: row %d can not be read, file contains only %d rows\n",tmp,nrow);
+         UNPROTECT(nprotect);
+         return(R_NilValue);
        }
     }
-    if(nsetcol > 0){
-       intval = setcol[imax_integer(nsetcol, setcol)];
-       //Rprintf("  Max index column=%d",intval);
-       if(intval > ncol){
-         Rprintf("  Error in reading column %d: file contains only %d columns\n",intval,ncol);
-         nerror++;
+    if(nicol > 0){
+       tmp = icol[imax_integer(nicol, icol)]+1;
+       //Rprintf("  Max index column=%d\n",itmp);
+       if(tmp > ncol){
+         Rprintf(" Error: column %d can not be read, file contains only %d column\n",tmp,ncol);
+         UNPROTECT(nprotect);
+         return(R_NilValue);
        }
     }
 
-    n = nsetrow > 0 ? (long long) nsetrow : nrow;
-    p = nsetcol > 0 ? (long long) nsetcol : ncol;
+    n = nirow == 0 ? nrow : nirow;
+    p = nicol == 0 ? ncol : nicol;
     //Rprintf("  To read: n=%d, p=%d, vartype=%d, varsize=%d\n",n,p,vartype,varsize);
 
+    int status = 1;
     // vartype: 1:integer, 2: logical, 3: double
-    if(nerror == 0)
+    if(vartype == 1 || vartype == 2)  // INTEGER|LOGICAL
     {
-      if(vartype == 1 || vartype == 2)  // INTEGER|LOGICAL
+      if(vartype == 1)
       {
-        if(ismatrix){
-          if(vartype == 1){
-            X_=PROTECT(Rf_allocMatrix(INTSXP, n, p));
+        if(ismatrix)
+        {
+          if((n==1) || (p==1))
+          {
+            if(drop){
+              X_ = PROTECT(Rf_allocVector(INTSXP, (long long)n*(long long)p));
+            }else{
+              X_ = PROTECT(Rf_allocMatrix(INTSXP, n, p));
+            }
           }else{
-            X_=PROTECT(Rf_allocMatrix(LGLSXP, n, p));
+            X_ = PROTECT(Rf_allocMatrix(INTSXP, n, p));
           }
         }else{
-          if(vartype == 1){
-            X_=PROTECT(Rf_allocVector(INTSXP, n));
-          }else{
-            X_=PROTECT(Rf_allocVector(LGLSXP, n));
-          }
+          X_=PROTECT(Rf_allocVector(INTSXP, n));
         }
+        type = "integer";
+      }else{
+        if(ismatrix)
+        {
+          if((n==1) || (p==1))
+          {
+            if(drop){
+              X_ = PROTECT(Rf_allocVector(LGLSXP, (long long)n*(long long)p));
+            }else{
+              X_ = PROTECT(Rf_allocMatrix(LGLSXP, n, p));
+            }
+          }else{
+            X_ = PROTECT(Rf_allocMatrix(LGLSXP, n, p));
+          }
+        }else{
+          X_=PROTECT(Rf_allocVector(LGLSXP, n));
+        }
+        type = "logical";
+      }
+      nprotect++;
 
-        int *X=INTEGER_POINTER(X_);
-        read_integer(f, 16, ncol, nrow, n, p, X,
-                     varsize, nsetrow, setrow, nsetcol, setcol, &nerror);
+      int *X=INTEGER_POINTER(X_);
+      read_integer(f, start, ncol, nrow, n, p, X,
+                   varsize, nirow, irow, nicol, icol, &status);
+
+    }else{
+      if(vartype == 3)  // DOUBLE
+      {
+        type = "numeric";
+        if(ismatrix)
+        {
+          if((n==1) || (p==1))
+          {
+            if(drop){
+              X_ = PROTECT(Rf_allocVector(REALSXP, (long long)n*(long long)p));
+            }else{
+              X_ = PROTECT(Rf_allocMatrix(REALSXP, n, p));
+            }
+          }else{
+            X_ = PROTECT(Rf_allocMatrix(REALSXP, n, p));
+          }
+        }else{
+          X_=PROTECT(Rf_allocVector(REALSXP, n));
+        }
+        nprotect++;
+
+        double *X=NUMERIC_POINTER(X_);
+        read_double(f, start, ncol, nrow, n, p, X,
+                    varsize, nirow, irow, nicol, icol, &status);
 
       }else{
-        if(vartype == 3)  // DOUBLE
-        {
-          if(ismatrix){
-            X_=PROTECT(Rf_allocMatrix(REALSXP, n, p));
-          }else{
-            X_=PROTECT(Rf_allocVector(REALSXP, n));
-          }
-
-          double *X=NUMERIC_POINTER(X_);
-          read_double(f, 16, ncol, nrow, n, p, X,
-                      varsize, nsetrow, setrow, nsetcol, setcol, &nerror);
-
-        }else{
-          Rprintf("  Error: File can not be read with the current type format\n");
-        }
+        Rprintf(" Error: File can not be read with the current type format\n");
       }
     }
     fclose(f);
 
-    PROTECT(list = Rf_allocVector(VECSXP, 6));
+    if(status == 0){
+      if(verbose){
+        tmp = (long long)nrow*(long long)ncol*(long long)varsize + start;
+        Rprintf(" Loaded file: '%s'\n",CHAR(STRING_ELT(filename_,0)));
+        if(ismatrix){
+          Rprintf(" Dimension: %d x %d\n",n, p);
+        }else{
+          Rprintf(" Dimension: %d\n",n);
+        }
+        Rprintf(" Data type: %s\n",type);
+        Rprintf(" Data size: %d bytes\n",varsize);
+        Rprintf(" File size: %s\n",format_file_size(tmp));
+      }
+      UNPROTECT(nprotect);
+      return(X_);
 
-    SET_VECTOR_ELT(list, 0, ScalarInteger(n));
-    SET_VECTOR_ELT(list, 1, ScalarInteger(p));
-    SET_VECTOR_ELT(list, 2, ScalarInteger(vartype));
-    SET_VECTOR_ELT(list, 3, ScalarInteger(varsize));
-    SET_VECTOR_ELT(list, 4, ScalarInteger(nerror));
-    SET_VECTOR_ELT(list, 5, X_);
-
-    UNPROTECT(4);
-    return(list);
+    }else{
+      UNPROTECT(nprotect);
+      return(R_NilValue);
+    }
 }

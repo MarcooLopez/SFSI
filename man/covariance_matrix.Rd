@@ -2,17 +2,11 @@
 \name{3. Covariance matrix transformations}
 \alias{cov2dist}
 \alias{cov2cor2}
-\alias{penalize_cov}
-\title{Penalization or conversion of a covariance matrix to a distance/correlation matrix}
+\title{Conversion of a covariance matrix to a distance/correlation matrix}
 \usage{
-cov2dist(A, a = 1, inplace = FALSE,
-         n = NULL, uplo = NULL, byrow = NULL)
+cov2dist(A, a = 1, inplace = FALSE)
 
-cov2cor2(A, a = 1, inplace = FALSE, 
-         n = NULL, uplo = NULL, byrow = NULL)
-
-penalize_cov(A, lambda, inplace = FALSE,
-             n = NULL, uplo = NULL, byrow = NULL)
+cov2cor2(A, a = 1, inplace = FALSE)
 
 }
 \arguments{
@@ -23,19 +17,12 @@ When \code{TRUE} no result is produced but the input \code{A} is modified. Defau
 
 \item{a}{(numeric) A number to multiply the whole resulting matrix by. Default \code{a=1}}
 
-\item{lambda}{(numeric) Value to be added to the diagonal of \code{A}}
-
-\item{n}{(integer) Dimension of the squared matrix. Required only if \code{A} is a upper/lower triangular matrix (see e.g., \code{help(upperTri)}}
-
-\item{uplo}{(character) Either 'upper' or 'lower' if the input is a triangular matrix}
-
-\item{byrow}{\code{TRUE} or \code{FALSE} to whether \code{A} is triangular obtained row-wise or column-wise}
 }
 \value{
-Function 'cov2dist' returns a matrix containing the Euclidean distances. Function 'cov2cor2' returns a correlation matrix. Function 'penalize_cov' returns the diagonal displaced matrix
+Function 'cov2dist' returns a matrix containing the Euclidean distances. Function 'cov2cor2' returns a correlation matrix
 }
 \description{
-Ridge penalization or transformation into correlation matrix or distance matrix from a covariance matrix
+Transformation into correlation matrix or distance matrix from a covariance matrix
 }
 \details{
 For any variables
@@ -73,56 +60,41 @@ where \ifelse{html}{\out{sd(X<sub>i</sub>)=sqrt(var(X<sub>i</sub>))}}{\eqn{sd(X_
 
 Variances are obtained from the diagonal values while covariances are obtained from the out-diagonal.
 
-\ifelse{html}{\out{<b>Penalization.</b>}}{\eqn{\textbf{Penalization.}}{Penalization.}}
-
-In Ridge Regression, the problem of a near-singular variance-covariance matrix 
-(\ifelse{html}{\out{<b>A</b>}}{\eqn{\textbf{A}}{A}}) 
-is alleviated by adding positive elements to the diagonals, thereby decreasing its condition number. This is
-
-\ifelse{html}{\out{<p style='text-align:center'><b>A + D</b></p>}}{\deqn{\textbf{A}+\textbf{D}}{A + D}}
-
-where \ifelse{html}{\out{<b>D</b>=diag(&lambda;<sub>i</sub>)}}{\eqn{\textbf{D}=diag(\lambda_{i})}{D=diag(lambda_i)}}
-is a diagonal matrix containing the ridge parameter(s) 
-\ifelse{html}{\out{&lambda;<sub>i</sub>≥0}}{\eqn{\lambda_{i}\geq 0}{lambda_i >= 0}}
-serving as constant(s) shifting the diagonals of the matrix.
 }
 \examples{
   require(SFSI)
   data(wheatHTP)
   
-  X = scale(Y[,4:7])
-  (A = crossprod(X))             # Covariance matrix 
+  X = scale(M)[1:100,]/sqrt(ncol(M))
+  A = tcrossprod(X)        # A 100x100 covariance matrix 
   
   # Covariance matrix to distance matrix
-  (D = cov2dist(A))
+  D = cov2dist(A)
+  D[1:5,1:5]
   # (it must equal (but faster) to:)
-  D0 = as.matrix(dist(t(X)))
-  max(abs(D-D0))
+  D0 = as.matrix(dist(X))
+  max(D-D0)
   
   # Covariance to a correlation matrix
-  (R = cov2cor2(A))
+  R = cov2cor2(A)
+  R[1:5,1:5]
   # (it must equal (but faster) to:)
   R0 = cov2cor(A)
-  max(abs(R-R0))
+  max(R-R0)
   
   # Upper triangular matrix
   A0 = upperTri(A)
-  R = cov2cor2(A0)
-  unpackTri(R)
+  R0 = cov2cor2(A0)
+  unpackTri(R0)[1:5,1:5]
 
   # Lower triangular matrix
   A0 = lowerTri(A)
-  D = cov2dist(A0)
-  unpackTri(D)
+  D0 = cov2dist(A0)
+  unpackTri(D0)[1:5,1:5]
   
   # Using void=TRUE
+  A[1:5,1:5]
   cov2dist(A, inplace=TRUE)
-  A       # notice that A was modified
-  
-  # Adding a value to diagonal
-  (A = penalize_cov(A, lambda=1.75))
-  
-  lambda = rnorm(nrow(A))
-  (A = penalize_cov(A, lambda=lambda))
+  A[1:5,1:5]  # notice that A was modified
   
 }

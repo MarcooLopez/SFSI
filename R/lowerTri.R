@@ -2,6 +2,7 @@
 #====================================================================
 # Extract the lower triangle section from a squared matrix
 #====================================================================
+# diag = TRUE; byrow = FALSE
 lowerTri <- function(A, diag = TRUE, byrow = FALSE)
 {
     dm <- dim(A)
@@ -15,17 +16,11 @@ lowerTri <- function(A, diag = TRUE, byrow = FALSE)
     #dyn.load("c_triangular.so")
     if(isBigMatrix){
       message(" Routine 'lowerTri' is not implemented yet for 'bigmatrix'")
+      return(NULL)
 
     }else{
-      #if(storage.mode(A) != "double") storage.mode(A) <- "double"
-      out <- .Call('R_lowertri', n, A, diag, byrow)
+      return(.Call('R_lower_tri', n, A, diag, byrow))
     }
     #dyn.unload("c_triangular.so")
 
-    attr(out, "uplo") <- "lower"
-    attr(out, "n") <- n
-    attr(out, "include.diag") <- diag
-    attr(out, "byrow") <- byrow
-
-    return(out)
 }

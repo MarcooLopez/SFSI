@@ -9,8 +9,8 @@ saveBinary(X, file = paste0(tempdir(), "/file.bin"),
            verbose = TRUE)
   
 readBinary(file = paste0(tempdir(), "/file.bin"), 
-           index.row = NULL, index.col = NULL, 
-           verbose = TRUE)
+           rows = NULL, cols = NULL, 
+           drop = TRUE, verbose = TRUE)
 }
 \arguments{
 \item{X}{(numeric matrix) Data to save}
@@ -19,9 +19,11 @@ readBinary(file = paste0(tempdir(), "/file.bin"),
 
 \item{precision.format}{(character) Either 'single' or 'double' for numeric precision and memory occupancy (4 bytes/32-bit or 8 bytes/64-bit, respectively) of the matrix to save}
 
-\item{index.row}{(integer vector) Which rows are to be read from the file. Default \code{index.row=NULL} will read all the rows}
+\item{rows}{(integer vector) Which rows are to be read from the file. Default \code{rows=NULL} will read all the rows}
 
-\item{index.col}{(integer vector) Which columns are to be read from the file. Default \code{index.col=NULL} will read all the columns}
+\item{cols}{(integer vector) Which columns are to be read from the file. Default \code{cols=NULL} will read all the columns}
+
+\item{drop}{Either \code{TRUE} or \code{FALSE} to whether return a uni-dimensional vector when data is a matrix with either 1 row or 1 column}
 
 \item{verbose}{\code{TRUE} or \code{FALSE} to whether printing file information}
 }
@@ -62,12 +64,12 @@ Save/read a numeric data as a fortran-formatted binary file at a defined precisi
   file.info(filename2)$size  # But smaller-size file
 
   # Read specific rows and columns
-  index.row = c(2,4,5,8,10)
-  index.col = c(1,2,5)
-  X2 = readBinary(filename1,index.row=index.row,index.col=index.col)
+  rows = c(2,4,5,8,10)
+  cols = c(1,2,5)
+  X2 = readBinary(filename1,rows=rows,cols=cols)
   X2
   # Equal to: 
-  X[index.row,index.col]
+  X[rows,cols]
 
 }
 

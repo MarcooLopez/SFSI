@@ -53,8 +53,6 @@ SSI <- function(y, X = NULL, b = NULL, Z = NULL, K,
   }
   nTST <- length(tst)
 
-  storage.mode(K) <- "double"
-
   # Design matrix for fixed effects
   BLUE <- TRUE
   if(is.null(X)){   # Only an intercept
@@ -82,9 +80,26 @@ SSI <- function(y, X = NULL, b = NULL, Z = NULL, K,
     K <- tcrossprod(Z, tcrossprod(Z,K))   # Z%*%K%*%t(Z)
   }
 
-  if(length(dim(K)) != 2L | (length(K) != n^2)){
-    stop("Product Z K Z' must be a squared matrix with number of rows\n",
-         "      (and columns) equal to the number of elements in 'y'")
+  isTriK <- FALSE
+  if(length(dim(K)) == 2L){
+    if(length(K) != n^2){
+      stop("Product Z K Z' must be a symmetrix matrix with number of rows\n",
+           "      (and columns) equal to the number of elements in 'y'")
+    }
+  }else{
+    isTriK <- isTri(K)
+    if(isTriK){
+      stopifnot(attr(K,'n') == n)
+    }else{
+      stop("Input 'K' must be a symmetric full or triangular matrix")
+    }
+  }
+  storage.mode(K) <- "double"
+
+  if(isTriK){
+    if(is.null(varU) | is.null(varE) | is.null(b)){
+        stop("Estimation of 'varU','varE', and 'b' is not implemented yet for triangular matrices")
+    }
   }
 
   labels <- NULL
@@ -168,7 +183,7 @@ SSI <- function(y, X = NULL, b = NULL, Z = NULL, K,
        stop("The length of 'b' must be the same as the number of columns of 'X'")
     }
     for(k in 1:ntraits){
-      Xb <- c(Xb,as.vector(X%*%b[,k]))
+      Xb <- c(Xb, as.vector(X%*%b[,k]))
     }
     yTRN <- matrix(y[trn]-Xb[trn], nrow=1)
   }else{
@@ -176,15 +191,8 @@ SSI <- function(y, X = NULL, b = NULL, Z = NULL, K,
   }
 
   # Getting K <- varU*G and H <- varU*G + varE*I
-  if(ntraits == 1L){
-    K <- varU*K
-    H <- penalize_cov(K, lambda=varE, inplace=FALSE)
-  }else{
-    K <- kronecker(varU, K)
-    H <- K + kronecker(varE, diag(n))
-  }
-  H <- H[trn, trn]
-  K <- K[trn, tst, drop=FALSE]
+  H <- penalize_cov(K, a=varU, lambda=varE, rows=trn, cols=trn, verbose=FALSE)
+  K <- Kronecker(varU, K, rows=trn, cols=tst, verbose=FALSE)
 
   if(is.null(lambda)){
     if(common.lambda){
@@ -210,17 +218,13 @@ SSI <- function(y, X = NULL, b = NULL, Z = NULL, K,
 
   # Split the testing set into subsets. Only the subset provided will be fitted
   if(is.null(subset)){
-    subset_index <- fileID <- NULL
+    fileID <- NULL
     tmp <- ""
   }else{
      if(!is.numeric(subset) & length(subset) != 2L){
        stop("Object 'subset' must be a 2-elements vector")
      }
      sets <- sort(rep(1:subset[2],ceiling(nTST/subset[2]))[1:nTST])
-     subset_index <- do.call(rbind,lapply(1:subset[2], function(k){
-       tmp <- which(sets == k)
-       data.frame(subset=k,n=length(tmp),from=min(tmp),to=max(tmp))
-     }))
      index <- which(sets == subset[1])
      fileID <- index[]
      tmp <- paste0(" of ",length(tst))
@@ -235,6 +239,8 @@ SSI <- function(y, X = NULL, b = NULL, Z = NULL, K,
 
   # If 'save.at' is not NULL
   if(!is.null(save.at)){
+    stopifnot(is.character(save.at))
+    save.at <- normalizePath(save.at, mustWork=F)
     prefix <- basename(tempfile(pattern=""))
     if(is.null(subset)){
       outfile <- paste0(save.at,"output.RData")
@@ -279,10 +285,6 @@ SSI <- function(y, X = NULL, b = NULL, Z = NULL, K,
               fileID=out$fileID,
               precision.format=precision.format
             )
-
-  if(!is.null(subset)){
-    out$subset <- subset_index
-  }
 
   class(out) <- c("SSI")
 

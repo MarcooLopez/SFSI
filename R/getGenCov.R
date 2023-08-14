@@ -1,4 +1,5 @@
 
+# X <- Z <- K <- U <- d <- NULL; scale = TRUE; pairwise=FALSE; verbose = TRUE
 getGenCov <- function(y, X = NULL, Z = NULL, K = NULL,
                       U = NULL, d = NULL, scale = TRUE,
                       pairwise=FALSE, verbose = TRUE, ...)
@@ -12,9 +13,14 @@ getGenCov <- function(y, X = NULL, Z = NULL, K = NULL,
     y <- matrix(y, ncol=1L)
   }
 
-  trn_list <- get_common_trn(y)
-  if(length(trn_list) > 1){
-    stop("The method can be applied to a unique common training set")
+  trn <- which(apply(y,1,function(x)all(!is.na(x))))  # Common TRN set
+  if(length(trn) == 0){
+    stop("No common training set to all response variables was found")
+  }else{
+    if(verbose){
+      message(" Calculating genetic covariances using n=",length(trn)," training observations")
+    }
+    y <- y[trn,,drop=FALSE]
   }
 
   n <- nrow(y)

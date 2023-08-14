@@ -118,16 +118,17 @@ solveEN <- function(Sigma, Gamma, alpha = 1, lambda = NULL,
     file_beta <- NULL
     if(flagsave){
       stopifnot(is.character(save.at))
+      save.at <- normalizePath(save.at, mustWork=F)
       file_beta <- paste0(save.at,"beta_i_")
 
       if(!file.exists(dirname(file_beta))){
-        dir.create(dirname(file_beta),recursive=TRUE)
+        dir.create(dirname(file_beta), recursive=TRUE)
       }
 
       if(is.null(fileID)){
         fileID <- seq(q)
       }else{
-        stopifnot(length(fileID)==q)
+        stopifnot(length(fileID) == q)
       }
     }
 

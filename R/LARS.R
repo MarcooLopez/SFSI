@@ -68,6 +68,7 @@ LARS <- function(Sigma, Gamma, method=c("LAR","LASSO"),
   file_beta <- NULL
   if(flagsave){
     stopifnot(is.character(save.at))
+    save.at <- normalizePath(save.at, mustWork=F)
     file_beta <- paste0(save.at,"beta_i_")
 
     if(!file.exists(dirname(file_beta))){

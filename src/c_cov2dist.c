@@ -5,7 +5,7 @@
 #include <Rdefines.h>
 #include <string.h>
 #include <R_ext/Lapack.h>
-#include "SFSI.h"
+//#include "SFSI.h"
 //#include "utils.c"
 
 // ----------------------------------------------------------
@@ -21,12 +21,12 @@
 //  If lower(upper), A must contain the n(n+1)/2 entries on or
 //  below (above) the diagonal
 // ----------------------------------------------------------
-SEXP R_cov2dist(SEXP n_, SEXP A_, SEXP a_, SEXP type_, SEXP byrow_)
+SEXP R_cov2dist(SEXP n_, SEXP a_, SEXP A_, SEXP type_, SEXP byrow_)
 {
     long long i, j;
     long long pos;
 
-    long long n=(long long)INTEGER_VALUE(n_);
+    int n=INTEGER_VALUE(n_);
     double a=NUMERIC_VALUE(a_);
     int type=INTEGER_VALUE(type_);
     int byrow=asLogical(byrow_);

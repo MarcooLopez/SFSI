@@ -3,39 +3,42 @@
 # Convert a packed upper/lower triangle matrix into a symmetric matrix
 #====================================================================
 # n = uplo = diag = byrow = NULL
-unpackTri <- function(A, n = NULL, uplo = NULL, byrow = NULL)
+unpackTri <- function(A, rows = NULL, cols = NULL,
+                      drop = TRUE, verbose = TRUE)
 {
-   if(is.null(n)){
-     if('n' %in% names(attributes(A))){
-       n <- attr(A, "n")
-     }else{
-       stop("Dimension 'n' of the matrix must be provided")
-     }
-   }
-   if(length(A)==(n*(n+1)/2) | length(A)==(n*(n-1)/2)){
-     diag <- ifelse(length(A)==n*(n+1)/2, TRUE, FALSE)
-   }else{
-     stop("Input 'A' must contain either n(n+1)/2 or n(n-1)/2 entries")
+   if(length(dim(A)) == 2L){
+     stop("Input 'A' must be a vector with attributes")
    }
 
-   if('uplo' %in% names(attributes(A))){
-     uplo <- attr(A, "uplo")
-   }else{
-     if(is.null(uplo)){
-       stop("Parameter 'uplo' must be specified: either 'upper' or 'lower'")
+   tmp <- info_matrix(A, check=TRUE)
+   n <- tmp$nrows
+   uplo <- tmp$type
+   diag <- tmp$diag
+   byrow <- tmp$byrow
+
+   if(verbose){
+     message(" Unpacking a ",n,"x",n," matrix packed ",ifelse(byrow,"row","column"),
+             "-wise with the '",uplo,"' triangular data")
+
+     if(!diag){
+       message(" Data in 'A' does not contain a diagonal, it is assumed to be 1")
      }
    }
-   uplo <- ifelse(uplo=="upper",1L,ifelse(uplo=="lower",2L,NA))
 
-   if('byrow' %in% names(attributes(A))){
-     byrow <- attr(A, "byrow")
-   }else{
-     if(is.null(byrow)){
-       stop("Parameter 'byrow' whether data is stored by row must be must be specified")
+   if(!is.null(rows)){
+     stopifnot(all(!is.na(rows)))
+     if(any(rows<1) | any(rows>n)){
+       stop("Input 'rows' must be integers between 1 and dim(A)=",n)
+     }
+   }
+   if(!is.null(cols)){
+     stopifnot(all(!is.na(cols)))
+     if(any(cols<1) | any(cols>n)){
+       stop("Input 'cols' must be integers between 1 and dim(A)=",n)
      }
    }
 
    #dyn.load("c_triangular.so")
-   return(.Call('R_unpacktri', n, A, uplo, diag, byrow))
+   return(.Call('R_unpack_tri', n, A, rows-1, cols-1, drop, uplo, diag, byrow))
    #dyn.unload("c_triangular.so")
 }

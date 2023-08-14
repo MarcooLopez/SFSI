@@ -1,13 +1,13 @@
 # SFSI: Sparse Family and Selection Indices
 
 [![CRAN status](https://www.r-pkg.org/badges/version/SFSI?color=green)](https://CRAN.R-project.org/package=SFSI)
-[![CRAN checks](https://cranchecks.info/badges/worst/SFSI)](https://cran.r-project.org/web/checks/check_results_SFSI.html)
+[![CRAN checks](https://badges.cranchecks.info/worst/SFSI.svg)](https://cran.r-project.org/web/checks/check_results_SFSI.html)
 [![Downloads](https://cranlogs.r-pkg.org/badges/grand-total/SFSI)](http://www.r-pkg.org/pkg/SFSI)
 [![Downloads/month](http://cranlogs.r-pkg.org/badges/SFSI?color=blue)](http://www.r-pkg.org/pkg/SFSI)
 
 The SFSI R-package solves penalized regression problems offering tools for the solutions to penalized selection indices. In this repository we maintain the latest (developing) version.
 
-*Last update: Jul 26, 2023*
+*Last update: Aug 13, 2023*
 
 ## Package installation
 

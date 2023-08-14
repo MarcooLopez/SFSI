@@ -5,6 +5,32 @@
 #include <R_ext/Lapack.h>
 
 //====================================================================
+// Return 1 if the all elements in set1 are
+// equal to those in set2, of if both are NULL
+// Return 0 otherwise
+//====================================================================
+int all_equal(long long n1, int *set1, long long n2, int *set2){
+  int out;
+  long long i;
+  if((n1 + n2) == 0){
+    out = 1;
+  }else{
+    if(n1 == n2){
+      out = 1;
+      for(i=0; i<n1; i++){
+        if(set1[i] != set2[i]){
+          out = 0;
+          break;
+        }
+      }
+    }else{
+      out = 0;
+    }
+  }
+  return(out);
+}
+
+//====================================================================
 // Return the position of the maximum element of 'x'
 //   x: an integer vector of length 'n'
 //====================================================================
@@ -143,13 +169,13 @@ void matrix_vector_product_tri(int n,
 void tcrossproduct_tri(int n, double *A, double *B, double *C)
 {
    long long i;
-   long long n0 = (long long)n;
+
    // Loop over all rows of B
    for(i=0; i<n; i++){
      // Obtain the i column of C: C[,i] = A*B[i,]'
      matrix_vector_product_tri(n, A,
                                B + i, n,
-                               C + n0*i,
+                               C + n*i,
                                0, 1);
    }
 }
@@ -168,19 +194,16 @@ void crossproduct_scale(int nrowAB, int ncolA, int ncolB,
   long long i, j;
   double one=1;
 
-  long long nrowAB0 = (long long)nrowAB;
-  long long ncolA0 = (long long)ncolA;
-
   // Loop over all columns of B
   for(j=0; j<ncolB; j++){
     // Obtain the j column of B scaled by d: w =  B[,j]*d
     for(i=0; i<nrowAB; i++){
-      work[i] = d[i]*B[nrowAB0*j + i];
+      work[i] = d[i]*B[nrowAB*j + i];
     }
 
     // Obtain the j colum of C: C[,j] = A'w
     matrix_vector_product(nrowAB, ncolA, &one, A, work, 1,
-                          C + ncolA0*j, 1);
+                          C + ncolA*j, 1);
   }
 }
 
@@ -195,23 +218,20 @@ void tcrossproduct_scale(int nrowA, int ncolAB, int nrowB,
                          double *A, double *d, double *B,
                          double *C, double *work)
 {
- long long i, j;
- double one=1;
+  long long i, j;
+  double one=1;
 
- long long nrowA0 = (long long)nrowA;
- long long nrowB0 = (long long)nrowB;
+  // Loop over all rows of B
+  for(i=0; i<nrowB; i++){
+    // Obtain the i row of B scaled by d: w =  B[i,]*d
+    for(j=0; j<ncolAB; j++){
+      work[j] = d[j]*B[nrowB*j + i];
+    }
 
- // Loop over all rows of B
- for(i=0; i<nrowB; i++){
-   // Obtain the i row of B scaled by d: w =  B[i,]*d
-   for(j=0; j<ncolAB; j++){
-     work[j] = d[j]*B[nrowB0*j + i];
-   }
-
-   // Obtain the i column of C: C[,i] = Aw
-   matrix_vector_product(nrowA, ncolAB, &one, A, work, 1,
-                         C + nrowA0*i, 0);
- }
+    // Obtain the i column of C: C[,i] = Aw
+    matrix_vector_product(nrowA, ncolAB, &one, A, work, 1,
+                          C + nrowA*i, 0);
+  }
 }
 
 //====================================================================
@@ -232,24 +252,21 @@ void slice_matrix(int nrow, double *A, double *x,
   int inc1=1;
   //int one=1;
 
-  long long nrow0 = (long long)nrow;
-  long long k0 = (long long)k;
-
   if(margin == 1){
     if(index == NULL){  // First n entries of row k
       F77_NAME(dcopy)(&n, A+k, &nrow, x, &inc1);
     }else{
       for(i=0; i<n; i++){
-        x[i] = A[nrow0*(long long)index[i] + k0];
+        x[i] = A[nrow*(long long)index[i] + (long long)k];
       }
     }
 
   }else{
     if(index == NULL){  // First n entries of column k
-      F77_NAME(dcopy)(&n, A + nrow0*k0, &inc1, x, &inc1);
+      F77_NAME(dcopy)(&n, A + nrow*(long long)k, &inc1, x, &inc1);
     }else{
       for(i=0; i<n; i++){
-        x[i] = A[nrow0*k0 + (long long)index[i]];
+        x[i] = A[nrow*(long long)k + (long long)index[i]];
       }
     }
   }
@@ -263,17 +280,12 @@ void resize_matrix(int nrow, int ncol,
 {
   long long j, offset;
 
-  long long nrow0 = (long long)nrow;
-  long long ncol0 = (long long)ncol;
-  long long nrownew0 = (long long)nrownew;
-  long long ncolnew0 = (long long)ncolnew;
-
   int m = ncolnew < ncol ? ncolnew : ncol; // min(pnew,p)
 
   if(nrownew < nrow){
     for(j=1; j<m; j++){
       //Rprintf("    Copying %d elements from %d to %d columns\n", m, n*j, nnew*j);
-      memmove(A + nrownew0*j, A + nrow0*j, nrownew0*sizeof(double));
+      memmove(A + nrownew*j, A + nrow*j, (long long)nrownew*sizeof(double));
     }
   }
 
@@ -282,14 +294,14 @@ void resize_matrix(int nrow, int ncol,
     if(ncol > 1){
       //  Shifting elements starting at last column and filling with zeros
       for(j=m-1; j>=1; j--){
-        memmove(A + nrownew0*j, A + nrow0*j, nrow0*sizeof(double));
-        memset(A + nrownew0*j + nrow0, 0, offset*sizeof(double)); // set 0 extra rows
+        memmove(A + nrownew*j, A + nrow*j, (long long)nrow*sizeof(double));
+        memset(A + nrownew*j + nrow, 0, offset*sizeof(double)); // set 0 extra rows
       }
     }
     memset(A + nrow, 0, offset*sizeof(double));
   }
   if(ncolnew > ncol){
-    memset(A + nrownew0*ncol0, 0, (ncolnew0-ncol0)*nrownew0*sizeof(double));
+    memset(A + nrownew*(long long)ncol, 0, (ncolnew-ncol)*(long long)nrownew*sizeof(double));
   }
 }
 
@@ -381,12 +393,12 @@ void invert_matrix(int n, double *A, double *Ainv, double *eps, double *work)
 
   if(info == 0){
     long long j;
-    long long n0 = (long long)n;
+
     // Invert R matrix by columwise backsolve: Rinv[,j]
-    memset(work, 0, n0*n0*sizeof(double));
+    memset(work, 0, (long long)n*(long long)n*sizeof(double));
     for(j=0; j<n; j++){
-      work[n0*j + j] = 1;
-      backsolve(n, Ainv, work + n0*j);
+      work[(long long)n*j + j] = 1;
+      backsolve(n, Ainv, work + (long long)n*j);
     }
     // Get the inverse: Ainv <- Rinv*(Rinv)'
     tcrossproduct_tri(n, work, work, Ainv);
@@ -437,9 +449,8 @@ void matrix_vector_product_subset(int nrow,
 
     case 2: // nirow==0 && nicol>0
       if(transpose){
-        long long nrow0 = (long long)nrow;
         for(j=0; j<nicol; j++){
-          y[j] = F77_NAME(ddot)(&nrow,A + nrow0*(long long)icol[j],&inc1,x,&inc1);
+          y[j] = F77_NAME(ddot)(&nrow,A + nrow*(long long)icol[j],&inc1,x,&inc1);
         }
       }else{
         for(i=0; i<nrow; i++){
@@ -534,6 +545,821 @@ void reduce_vector_integer(int n,
       j++;
     }else{
       flag=0;
+    }
+  }
+}
+
+//====================================================================
+//    Retrieve the element A[i,j] from a matrix A that is stored
+//    as a triangular (uplo='upper' or uplo='lower') matrix stacked
+//    row-wise (byrow=TRUE) or column-wise (byrow=FALSE).
+//    It is assumed that A is symmetric, therefore A[i,j] = A[j,i]
+//
+//    'get_tri_diag1' and 'get_tri_nodiag1' works for cases
+//    (uplo='upper')&(byrow=FALSE) or (uplo='lower')&(byrow=TRUE)
+//
+//    'get_tri_diag2' and 'get_tri_nodiag2' works for cases
+//    (uplo='upper')&(byrow=TRUE) or (uplo='lower')&(byrow=FALSE)
+//====================================================================
+
+double ij_tri_diag1(double *A, long long i, long long j)
+{
+  if(i <= j){
+    return(A[j*(j+1)/2 + i]);
+  }else{
+    return(A[i*(i+1)/2 + j]);
+  }
+}
+
+//====================================================================
+
+double ij_tri_nodiag1(double *A, long long i, long long j)
+{
+  if(i < j){
+    return(A[j*(j-1)/2 + i]);
+  }else{
+    if(i > j){
+      return(A[i*(i-1)/2 + j]);
+    }else{
+      return(1);
+    }
+  }
+}
+
+//====================================================================
+
+double ij_tri_diag2(int nA, double *A, long long i, long long j)
+{
+  if(i >= j){
+    return(A[nA*j - j*(j-1)/2 + i - j]);
+  }else{
+    return(A[nA*i - i*(i-1)/2 + j - i]);
+  }
+}
+
+//====================================================================
+
+double ij_tri_nodiag2(int nA, double *A, long long i, long long j)
+{
+  if(i > j){
+    return(A[nA*j - j*(j+1)/2 + i - j - 1]);
+  }else{
+    if(i < j){
+      return(A[nA*i - i*(i+1)/2 + j - i - 1]);
+    }else{
+      return(1);
+    }
+  }
+}
+
+//====================================================================
+// The folowing five functions are used to create a kronecker
+// between different combinations of full/triangular matrices.
+// Four cases of setting rows/columns are considered:
+//     case_set=0 : nirow=0 && nicol=0
+//     case_set=1 : nirow>0 && nicol=0
+//     case_set=2 : nirow=0 && nicol>0
+//     case_set=3 : nirow>0 && nicol>0
+//====================================================================
+void make_kronecker_full_full(int case_set, long long nrow, long long ncol,
+                              int nrowA, int ncolA, double *A,
+                              int nrowB, int ncolB, double *B,
+                              int *posArow, int *posBrow, int *posAcol, int *posBcol,
+                              int *irow, int *icol, double *out)
+{
+  long long i, j, k;
+  int inc1=1;
+  double a;
+  double *Aj, *Bj;
+
+  switch(case_set){
+    case 0: // nirow=0 && nicol=0
+      for(j=0; j<ncolA; j++){
+        for(i=0; i<nrowA; i++){
+          a = A[nrowA*j+i];
+          for(k=0; k<ncolB; k++){
+            F77_NAME(dcopy)(&nrowB, B+nrowB*k, &inc1, out+nrowA*nrowB*(ncolB*j+k) + nrowB*i, &inc1);
+            F77_NAME(dscal)(&nrowB, &a, out+nrowA*nrowB*(ncolB*j+k) + nrowB*i, &inc1);
+          }
+        }
+      }
+    break;
+
+    case 1: // nirow>0 && nicol=0
+      for(j=0; j<ncol; j++){
+        Aj = A + nrowA*(long long)posAcol[j];
+        Bj = B + nrowB*(long long)posBcol[j];
+        for(i=0; i<nrow; i++){
+          out[nrow*j + i] = Aj[posArow[irow[i]]]*Bj[posBrow[irow[i]]];
+        }
+      }
+    break;
+
+    case 2: // nirow=0 && nicol>0
+      for(j=0; j<ncol; j++){
+        Aj = A + nrowA*(long long)posAcol[icol[j]];
+        Bj = B + nrowB*(long long)posBcol[icol[j]];
+        for(i=0; i<nrow; i++){
+          out[nrow*j + i] = Aj[posArow[i]]*Bj[posBrow[i]];
+        }
+      }
+    break;
+
+    case 3: // nirow>0 && nicol>0
+      for(j=0; j<ncol; j++){
+        Aj = A + nrowA*(long long)posAcol[icol[j]];
+        Bj = B + nrowB*(long long)posBcol[icol[j]];
+        for(i=0; i<nrow; i++){
+          out[nrow*j + i] = Aj[posArow[irow[i]]]*Bj[posBrow[irow[i]]];
+        }
+      }
+    break;
+  }
+}
+
+//====================================================================
+
+void make_kronecker_tri_full1(int case_set, long long nrow, long long ncol,
+                              int nrowA, double *A, int nrowB, double *B, int diag,
+                              int *posArow, int *posBrow, int *posAcol, int *posBcol,
+                              int *irow, int *icol, double *out)
+{
+  long long i, j;
+  double *Bj;
+
+  if(diag){
+    switch(case_set){
+      case 0: // nirow=0 && nicol=0
+        for(j=0; j<ncol; j++){
+          Bj = B + nrowB*(long long)posBcol[j];
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_diag1(A, posArow[i], posAcol[j])*Bj[posBrow[i]];
+          }
+        }
+      break;
+
+      case 1: // nirow>0 && nicol=0
+        for(j=0; j<ncol; j++){
+          Bj = B + nrowB*(long long)posBcol[j];
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_diag1(A, posArow[irow[i]], posAcol[j])*Bj[posBrow[irow[i]]];
+          }
+        }
+      break;
+
+      case 2: // nirow=0 && nicol>0
+        for(j=0; j<ncol; j++){
+          Bj = B + nrowB*(long long)posBcol[icol[j]];
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_diag1(A, posArow[i], posAcol[icol[j]])*Bj[posBrow[i]];
+          }
+        }
+      break;
+
+      case 3: // nirow>0 && nicol>0
+        for(j=0; j<ncol; j++){
+          Bj = B + nrowB*(long long)posBcol[icol[j]];
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_diag1(A, posArow[irow[i]], posAcol[icol[j]])*Bj[posBrow[irow[i]]];
+          }
+        }
+      break;
+    }
+
+  }else{ // No diagonal
+    switch(case_set){
+      case 0: // nirow=0 && nicol=0
+        for(j=0; j<ncol; j++){
+          Bj = B + nrowB*(long long)posBcol[j];
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_nodiag1(A, posArow[i], posAcol[j])*Bj[posBrow[i]];
+          }
+        }
+      break;
+
+      case 1: // nirow>0 && nicol=0
+        for(j=0; j<ncol; j++){
+          Bj = B + nrowB*(long long)posBcol[j];
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_nodiag1(A, posArow[irow[i]], posAcol[j])*Bj[posBrow[irow[i]]];
+          }
+        }
+      break;
+
+      case 2: // nirow=0 && nicol>0
+        for(j=0; j<ncol; j++){
+          Bj = B + nrowB*(long long)posBcol[icol[j]];
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_nodiag1(A, posArow[i], posAcol[icol[j]])*Bj[posBrow[i]];
+          }
+        }
+      break;
+
+      case 3: // nirow>0 && nicol>0
+        for(j=0; j<ncol; j++){
+          Bj = B + nrowB*(long long)posBcol[icol[j]];
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_nodiag1(A, posArow[irow[i]], posAcol[icol[j]])*Bj[posBrow[irow[i]]];
+          }
+        }
+      break;
+    }
+  }
+}
+
+//====================================================================
+
+void make_kronecker_tri_full2(int case_set, long long nrow, long long ncol,
+                              int nrowA, double *A, int nrowB, double *B, int diag,
+                              int *posArow, int *posBrow, int *posAcol, int *posBcol,
+                              int *irow, int *icol, double *out)
+{
+  long long i, j;
+  double *Bj;
+
+  if(diag){
+    switch(case_set){
+      case 0: // nirow=0 && nicol=0
+        for(j=0; j<ncol; j++){
+          Bj = B + nrowB*(long long)posBcol[j];
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_diag2(nrowA, A, posArow[i], posAcol[j])*Bj[posBrow[i]];
+          }
+        }
+      break;
+
+      case 1: // nirow>0 && nicol=0
+        for(j=0; j<ncol; j++){
+          Bj = B + nrowB*(long long)posBcol[j];
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_diag2(nrowA, A, posArow[irow[i]], posAcol[j])*Bj[posBrow[irow[i]]];
+          }
+        }
+      break;
+
+      case 2: // nirow=0 && nicol>0
+        for(j=0; j<ncol; j++){
+          Bj = B + nrowB*(long long)posBcol[icol[j]];
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_diag2(nrowA, A, posArow[i], posAcol[icol[j]])*Bj[posBrow[i]];
+          }
+        }
+      break;
+
+      case 3: // nirow>0 && nicol>0
+        for(j=0; j<ncol; j++){
+          Bj = B + nrowB*(long long)posBcol[icol[j]];
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_diag2(nrowA, A, posArow[irow[i]], posAcol[icol[j]])*Bj[posBrow[irow[i]]];
+          }
+        }
+      break;
+    }
+
+  }else{ // No diagonal
+    switch(case_set){
+      case 0: // nirow=0 && nicol=0
+        for(j=0; j<ncol; j++){
+          Bj = B + nrowB*(long long)posBcol[j];
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_nodiag2(nrowA, A, posArow[i], posAcol[j])*Bj[posBrow[i]];
+          }
+        }
+      break;
+
+      case 1: // nirow>0 && nicol=0
+        for(j=0; j<ncol; j++){
+          Bj = B + nrowB*(long long)posBcol[j];
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_nodiag2(nrowA, A, posArow[irow[i]], posAcol[j])*Bj[posBrow[irow[i]]];
+          }
+        }
+      break;
+
+      case 2: // nirow=0 && nicol>0
+        for(j=0; j<ncol; j++){
+          Bj = B + nrowB*(long long)posBcol[icol[j]];
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_nodiag2(nrowA, A, posArow[i], posAcol[icol[j]])*Bj[posBrow[i]];
+          }
+        }
+      break;
+
+      case 3: // nirow>0 && nicol>0
+        for(j=0; j<ncol; j++){
+          Bj = B + nrowB*(long long)posBcol[icol[j]];
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_nodiag2(nrowA, A, posArow[irow[i]], posAcol[icol[j]])*Bj[posBrow[irow[i]]];
+          }
+        }
+      break;
+    }
+  }
+}
+
+//====================================================================
+
+void make_kronecker_tri_tri1_totri(long long n,
+                                   int nA, double *A, int nB, double *B,
+                                   int diag, int *posA, int *posB,
+                                   int nindex, int *index, double *out)
+{
+  long long i, j, tmp;
+
+  tmp = 0;
+  if(nindex == 0){ // No subsetting
+    if(diag){
+      for(j=0; j<n; j++){
+        for(i=0; i<j+1; i++){
+          out[tmp++] = ij_tri_diag1(A,posA[i],posA[j])*ij_tri_diag1(B,posB[i],posB[j]);
+        }
+      }
+    }else{
+      for(j=0; j<n; j++){
+        for(i=0; i<j; i++){
+          out[tmp++] = ij_tri_nodiag1(A,posA[i],posA[j])*ij_tri_nodiag1(B,posB[i],posB[j]);
+        }
+      }
+    }
+
+  }else{
+    if(diag){
+      for(j=0; j<n; j++){
+        for(i=0; i<j+1; i++){
+          out[tmp++] = ij_tri_diag1(A,posA[index[i]],posA[index[j]])*ij_tri_diag1(B,posB[index[i]],posB[index[j]]);
+        }
+      }
+    }else{
+      for(j=0; j<n; j++){
+        for(i=0; i<j; i++){
+          out[tmp++] = ij_tri_nodiag1(A,posA[index[i]],posA[index[j]])*ij_tri_nodiag1(B,posB[index[i]],posB[index[j]]);
+        }
+      }
+    }
+  }
+}
+
+void make_kronecker_tri_tri1(int case_set, long long nrow, long long ncol,
+                             int nrowA, double *A, int nrowB, double *B, int diag,
+                             int *posArow, int *posBrow, int *posAcol, int *posBcol,
+                             int *irow, int *icol, double *out)
+{
+  long long i, j;
+
+  if(diag){
+    switch(case_set){
+      case 0: // nirow=0 && nicol=0
+        for(j=0; j<ncol; j++){
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_diag1(A,posArow[i],posAcol[j])*ij_tri_diag1(B,posBrow[i],posBcol[j]);
+          }
+        }
+      break;
+
+      case 1: // nirow>0 && nicol=0
+        for(j=0; j<ncol; j++){
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_diag1(A,posArow[irow[i]],posAcol[j])*ij_tri_diag1(B,posBrow[irow[i]],posBcol[j]);
+          }
+        }
+      break;
+
+      case 2: // nirow=0 && nicol>0
+        for(j=0; j<ncol; j++){
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_diag1(A,posArow[i],posAcol[icol[j]])*ij_tri_diag1(B,posBrow[i],posBcol[icol[j]]);
+          }
+        }
+      break;
+
+      case 3: // nirow>0 && nicol>0
+        for(j=0; j<ncol; j++){
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_diag1(A,posArow[irow[i]],posAcol[icol[j]])*ij_tri_diag1(B,posBrow[irow[i]],posBcol[icol[j]]);
+          }
+        }
+      break;
+    }
+
+  }else{ // No diagonal
+    switch(case_set){
+      case 0: // nirow=0 && nicol=0
+        for(j=0; j<ncol; j++){
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_nodiag1(A,posArow[i],posAcol[j])*ij_tri_nodiag1(B,posBrow[i],posBcol[j]);
+          }
+        }
+      break;
+
+      case 1: // nirow>0 && nicol=0
+        for(j=0; j<ncol; j++){
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_nodiag1(A,posArow[irow[i]],posAcol[j])*ij_tri_nodiag1(B,posBrow[irow[i]],posBcol[j]);
+          }
+        }
+      break;
+
+      case 2: // nirow=0 && nicol>0
+        for(j=0; j<ncol; j++){
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_nodiag1(A,posArow[i],posAcol[icol[j]])*ij_tri_nodiag1(B,posBrow[i],posBcol[icol[j]]);
+          }
+        }
+      break;
+
+      case 3: // nirow>0 && nicol>0
+        for(j=0; j<ncol; j++){
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_nodiag1(A,posArow[irow[i]],posAcol[icol[j]])*ij_tri_nodiag1(B,posBrow[irow[i]],posBcol[icol[j]]);
+          }
+        }
+      break;
+    }
+  }
+}
+
+//====================================================================
+
+void make_kronecker_tri_tri2_totri(long long n,
+                                   int nA, double *A, int nB, double *B,
+                                   int diag, int *posA, int *posB,
+                                   int nindex, int *index, double *out)
+{
+  long long i, j, tmp;
+
+  tmp = 0;
+  if(nindex == 0){ // No subsetting
+    if(diag){
+      for(j=0; j<n; j++){
+        for(i=j; i<n; i++){
+          out[tmp++] = ij_tri_diag2(nA,A,posA[i],posA[j])*ij_tri_diag2(nB,B,posB[i],posB[j]);
+        }
+      }
+    }else{
+      for(j=0; j<n; j++){
+        for(i=j+1; i<n; i++){
+          out[tmp++] = ij_tri_nodiag2(nA,A,posA[i],posA[j])*ij_tri_nodiag2(nB,B,posB[i],posB[j]);
+        }
+      }
+    }
+
+  }else{
+    if(diag){
+      for(j=0; j<n; j++){
+        for(i=j; i<n; i++){
+          out[tmp++] = ij_tri_diag2(nA,A,posA[index[i]],posA[index[j]])*ij_tri_diag2(nB,B,posB[index[i]],posB[index[j]]);
+        }
+      }
+    }else{
+      for(j=0; j<n; j++){
+        for(i=j+1; i<n; i++){
+          out[tmp++] = ij_tri_nodiag2(nA,A,posA[index[i]],posA[index[j]])*ij_tri_nodiag2(nB,B,posB[index[i]],posB[index[j]]);
+        }
+      }
+    }
+  }
+}
+
+void make_kronecker_tri_tri2(int case_set, long long nrow, long long ncol,
+                             int nrowA, double *A, int nrowB, double *B, int diag,
+                             int *posArow, int *posBrow, int *posAcol, int *posBcol,
+                             int *irow, int *icol, double *out)
+{
+  long long i, j;
+
+  if(diag){
+    switch(case_set){
+      case 0: // nirow=0 && nicol=0
+        for(j=0; j<ncol; j++){
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_diag2(nrowA,A,posArow[i],posAcol[j])*ij_tri_diag2(nrowB,B,posBrow[i],posBcol[j]);
+          }
+        }
+      break;
+
+      case 1: // nirow>0 && nicol=0
+        for(j=0; j<ncol; j++){
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_diag2(nrowA, A,posArow[irow[i]],posAcol[j])*ij_tri_diag2(nrowB, B,posBrow[irow[i]],posBcol[j]);
+          }
+        }
+      break;
+
+      case 2: // nirow=0 && nicol>0
+        for(j=0; j<ncol; j++){
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_diag2(nrowA,A,posArow[i],posAcol[icol[j]])*ij_tri_diag2(nrowB,B,posBrow[i],posBcol[icol[j]]);
+          }
+        }
+      break;
+
+      case 3: // nirow>0 && nicol>0
+        for(j=0; j<ncol; j++){
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_diag2(nrowA,A,posArow[irow[i]],posAcol[icol[j]])*ij_tri_diag2(nrowB,B,posBrow[irow[i]],posBcol[icol[j]]);
+          }
+        }
+      break;
+    }
+
+  }else{ // No diagonal
+    switch(case_set){
+      case 0: // nirow=0 && nicol=0
+        for(j=0; j<ncol; j++){
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_nodiag2(nrowA,A,posArow[i],posAcol[j])*ij_tri_nodiag2(nrowB,B,posBrow[i],posBcol[j]);
+          }
+        }
+      break;
+
+      case 1: // nirow>0 && nicol=0
+        for(j=0; j<ncol; j++){
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_nodiag2(nrowA,A,posArow[irow[i]],posAcol[j])*ij_tri_nodiag2(nrowB,B,posBrow[irow[i]],posBcol[j]);
+          }
+        }
+      break;
+
+      case 2: // nirow=0 && nicol>0
+        for(j=0; j<ncol; j++){
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_nodiag2(nrowA,A,posArow[i],posAcol[icol[j]])*ij_tri_nodiag2(nrowB,B,posBrow[i],posBcol[icol[j]]);
+          }
+        }
+      break;
+
+      case 3: // nirow>0 && nicol>0
+        for(j=0; j<ncol; j++){
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_nodiag2(nrowA,A,posArow[irow[i]],posAcol[icol[j]])*ij_tri_nodiag2(nrowB,B,posBrow[irow[i]],posBcol[icol[j]]);
+          }
+        }
+      break;
+    }
+  }
+}
+
+//====================================================================
+//====================================================================
+
+void subset_tri1(int n, int nA, double *A, int diag,
+                 int nindex, int *index, double *out)
+{
+  long long tmp, i, j;
+
+  tmp = 0;
+  if(nindex == 0)
+  {
+    if(diag){
+      for(j=0; j<n; j++){
+        for(i=0; i<j+1; i++){
+          out[tmp++] = ij_tri_diag1(A, i, j);
+        }
+      }
+    }else{ // without diagonal
+      for(j=1; j<n; j++){
+        for(i=0; i<j; i++){
+          out[tmp++] = ij_tri_nodiag1(A, i, j);
+        }
+      }
+    }
+
+  }else{
+    if(diag){
+      for(j=0; j<n; j++){
+        for(i=0; i<j+1; i++){
+          out[tmp++] = ij_tri_diag1(A, index[i], index[j]);
+        }
+      }
+    }else{ // without diagonal
+      for(j=1; j<n; j++){
+        for(i=0; i<j; i++){
+          out[tmp++] = ij_tri_nodiag1(A, index[i], index[j]);
+        }
+      }
+    }
+  }
+}
+
+//====================================================================
+
+void subset_tri2(int n, int nA, double *A, int diag,
+                 int nindex, int *index, double *out)
+{
+  long long tmp, i, j;
+
+  tmp = 0;
+  if(nindex == 0)
+  {
+    if(diag){
+      for(j=0; j<n; j++){
+        for(i=j; i<n; i++){
+          out[tmp++] = ij_tri_diag2(nA, A, i, j);
+        }
+      }
+
+    }else{ // without diagonal
+      for(j=0; j<n-1; j++){
+        for(i=j+1; i<n; i++){
+          out[tmp++] = ij_tri_nodiag2(nA, A, i, j);
+        }
+      }
+    }
+
+  }else{
+    if(diag){
+      for(j=0; j<n; j++){
+        for(i=j; i<n; i++){
+          out[tmp++] = ij_tri_diag2(nA, A, index[i], index[j]);
+        }
+      }
+    }else{ // without diagonal
+      for(j=0; j<n-1; j++){
+        for(i=j+1; i<n; i++){
+          out[tmp++] = ij_tri_nodiag2(nA, A, index[i], index[j]);
+        }
+      }
+    }
+  }
+}
+
+//====================================================================
+//====================================================================
+
+void unpack_tri1(int case_set, long long nrow, long long ncol,
+                 int nA, double *A, int diag,
+                 int *irow, int *icol, double *out)
+{
+  long long i, j;
+  int tmp;
+  int inc1=1;
+
+  if(diag){
+    switch(case_set){
+      case 0: // nirow=0 && nicol=0
+        for(j=0; j<nA; j++){
+          out[nA*j + j] = A[(j+1)*(j+2)/2 -1];
+        }
+
+        for(j=1; j<nA; j++){   // Start from 2nd column/row to n
+          tmp = j;
+          F77_NAME(dcopy)(&tmp, A + j*(j+1)/2, &inc1, out + nA*j, &inc1);
+          F77_NAME(dcopy)(&tmp, A + j*(j+1)/2, &inc1, out + j, &nA);
+        }
+      break;
+
+      case 1: // nirow>0 && nicol=0
+        for(j=0; j<ncol; j++){
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_diag1(A, irow[i], j);
+          }
+        }
+      break;
+
+      case 2: // nirow=0 && nicol>0
+        for(j=0; j<ncol; j++){
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_diag1(A, i, icol[j]);
+          }
+        }
+      break;
+
+      case 3: // nirow>0 && nicol>0
+        for(j=0; j<ncol; j++){
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_diag1(A, irow[i], icol[j]);
+          }
+        }
+      break;
+    }
+
+  }else{ // without diagonal but is set to 1
+    switch(case_set){
+      case 0: // nirow=0 && nicol=0
+        for(j=0; j<nA; j++){
+          out[nA*j + j] = 1;
+        }
+
+        for(j=1; j<nA; j++){   // Start from 2nd column/row to n
+          tmp = j;
+          F77_NAME(dcopy)(&tmp, A + j*(j-1)/2, &inc1, out + nA*j, &inc1);
+          F77_NAME(dcopy)(&tmp, A + j*(j-1)/2, &inc1, out + j, &nA);
+        }
+      break;
+
+      case 1: // nirow>0 && nicol=0
+        for(j=0; j<ncol; j++){
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_nodiag1(A, irow[i], j);
+          }
+        }
+      break;
+
+      case 2: // nirow=0 && nicol>0
+        for(j=0; j<ncol; j++){
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_nodiag1(A, i, icol[j]);
+          }
+        }
+      break;
+
+      case 3: // nirow>0 && nicol>0
+        for(j=0; j<ncol; j++){
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_nodiag1(A, irow[i], icol[j]);
+          }
+        }
+      break;
+    }
+  }
+}
+
+//====================================================================
+
+void unpack_tri2(int case_set, long long nrow, long long ncol,
+                 int nA, double *A, int diag,
+                 int *irow, int *icol, double *out)
+{
+  long long i, j;
+  int tmp;
+  int inc1=1;
+
+  if(diag){
+    switch(case_set){
+      case 0: // nirow=0 && nicol=0
+        for(j=0; j<nA; j++){
+          out[nA*j + j] = A[nA*j - j*(j-1)/2];
+        }
+
+        for(j=0; j<nA-1; j++){   // Start from 1st column/row to n-1
+          tmp = nA-j-1;
+          F77_NAME(dcopy)(&tmp, A + nA*j - j*(j-1)/2 + 1, &inc1, out + nA*(j+1) + j, &nA);
+          F77_NAME(dcopy)(&tmp, A + nA*j - j*(j-1)/2 + 1, &inc1, out + nA*j + j + 1, &inc1);
+        }
+      break;
+
+      case 1: // nirow>0 && nicol=0
+        for(j=0; j<ncol; j++){
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_diag2(nA, A, irow[i], j);
+          }
+        }
+      break;
+
+      case 2: // nirow=0 && nicol>0
+        for(j=0; j<ncol; j++){
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_diag2(nA, A, i, icol[j]);
+          }
+        }
+      break;
+
+      case 3: // nirow>0 && nicol>0
+        for(j=0; j<ncol; j++){
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_diag2(nA, A, irow[i], icol[j]);
+          }
+        }
+      break;
+    }
+
+  }else{ // without diagonal but is set to 1
+    switch(case_set){
+      case 0: // nirow=0 && nicol=0
+        for(j=0; j<nA; j++){
+          out[nA*j + j] = 1;
+        }
+
+        for(j=0; j<nA-1; j++){   // Start from 1st column/row to n-1
+          tmp = nA-j-1;
+          F77_NAME(dcopy)(&tmp, A + nA*j - j*(j+1)/2, &inc1, out + nA*(j+1) + j, &nA);
+          F77_NAME(dcopy)(&tmp, A + nA*j - j*(j+1)/2, &inc1, out + nA*j + j + 1, &inc1);
+        }
+      break;
+
+      case 1: // nirow>0 && nicol=0
+        for(j=0; j<ncol; j++){
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_nodiag2(nA, A, irow[i], j);
+          }
+        }
+      break;
+
+      case 2: // nirow=0 && nicol>0
+        for(j=0; j<ncol; j++){
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_nodiag2(nA, A, i, icol[j]);
+          }
+        }
+      break;
+
+      case 3: // nirow>0 && nicol>0
+        for(j=0; j<ncol; j++){
+          for(i=0; i<nrow; i++){
+            out[nrow*j + i] = ij_tri_nodiag2(nA, A, irow[i], icol[j]);
+          }
+        }
+      break;
     }
   }
 }

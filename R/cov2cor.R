@@ -1,69 +1,40 @@
 
 # Covariance matrix to correlation matrix
 
-cov2cor2 <- function(A, a = 1, inplace = FALSE,
-                     n = NULL, uplo = NULL, byrow = NULL)
+cov2cor2 <- function(A, a = 1, inplace = FALSE)
 {
-    dm <- dim(A)
-    if(length(dm) == 2L){
-      if(dm[1] != dm[2]){
-        stop("Input 'A' must be a squared matrix")
-      }
-      n <- dm[1]
-      type <- "full"
-    }else{
-      if(is.null(n)){
-        if('n' %in% names(attributes(A))){
-          n <- attr(A, "n")
-        }else{
-          stop("Dimension 'n' of the matrix must be provided")
-        }
-      }
-      if(length(A) != (n*(n+1)/2)){
-        stop("Input 'A' must contain n(n+1)/2 entries when is not a matrix")
-      }
+   tmp <- info_matrix(A, check=TRUE)
+   if(tmp$nrows != tmp$ncols){
+     stop("Input 'A' must be squared matrix")
+   }
+   n <- tmp$nrows
+   type <- tmp$type
+   diag <- tmp$diag
+   byrow <- tmp$byrow
 
-      if('uplo' %in% names(attributes(A))){
-        type <- attr(A, "uplo")
-      }else{
-        if(is.null(uplo)){
-          stop("Parameter 'uplo' must be specified: either 'upper' or 'lower'")
-        }
-        type <- uplo
-      }
-
-      if('byrow' %in% names(attributes(A))){
-        byrow <- attr(A, "byrow")
-      }else{
-        if(is.null(byrow)){
-          stop("Parameter 'byrow' whether data is stored by row must be must be specified")
-        }
-      }
-    }
-
-    type <- ifelse(type=="full",0L,ifelse(type=="upper",1L,2L))
-
-    #isBigMatrix <- bigmemory::is.big.matrix(A)
-    isBigMatrix <- FALSE
-    if(isBigMatrix){
-      message(" Routine 'cov2cor' is not implemented yet for 'bigmatrix'")
-      #stopifnot(bigmemory::typeof(A) == "double")
-
-    }else{
-      #if(storage.mode(A) != "double") storage.mode(A) <- "double"
-      #dyn.load("c_cov2cor.so")
-      if(inplace){
-        nOK <- .Call('R_cov2cor', n, A, a, type, byrow)
-        out <- NULL
-      }else{
-        out <- A[]
-        nOK <- .Call('R_cov2cor', n, out, a, type, byrow)
-      }
-      #dyn.unload("c_cov2cor.so")
-    }
-   if(nOK != n){
-      message("Some diagonal values of 'A' are 0 or NA. Results are doubtful")
+   if(!diag){
+     stop("A triangular matrix with no diagonal was provided. A unit diagonal\n",
+          "is assumed, therefore, input is already a correlation matrix")
    }
 
-   invisible(out)
+   type <- ifelse(type=="full",0L,ifelse(type=="upper",1L,2L))
+
+   #isBigMatrix <- bigmemory::is.big.matrix(A)
+   isBigMatrix <- FALSE
+   if(isBigMatrix){
+     message(" Routine 'cov2cor' is not implemented yet for 'bigmatrix'")
+     #stopifnot(bigmemory::typeof(A) == "double")
+
+   }else{
+     #dyn.load("c_cov2cor.so")
+     if(inplace){
+       tmp <- .Call('R_cov2cor', n, a, A, type, byrow)
+       #return(tmp)
+     }else{
+       out <- A[]
+       tmp <- .Call('R_cov2cor', n, a, out, type, byrow)
+       return(out)
+     }
+     #dyn.unload("c_cov2cor.so")
+   }
 }

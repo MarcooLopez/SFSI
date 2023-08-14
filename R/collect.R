@@ -25,14 +25,14 @@ collect <- function(path = ".")
       tmp <- strsplit(basename(filenames),"subset_|_of_|_output.RData")
       indexFile <- as.numeric(unlist(lapply(tmp,function(x) x[2])))
       nFiles <- as.numeric(unlist(lapply(tmp,function(x) x[length(x)])))
-      FAIL <- FALSE
-      if(length(unique(nFiles))==1L){
-        FAIL <- length(nFiles) != nFiles[1]
+
+      if(length(unique(nFiles)) == 1L){
+        if(length(nFiles) != nFiles[1]){
+          stop("Found ",length(nFiles)," output file(s), ",nFiles[1]," are needed ",
+               "\n  Remove old files. No output was collected")
+        }
       }else{
-        FAIL <- TRUE
-      }
-      if(FAIL){
-        stop(" Different output files were found for the path='",path,"'",
+        stop("Different output files were found for the path='",path,"'",
             "\n  Remove old files. No output was collected")
       }
 
