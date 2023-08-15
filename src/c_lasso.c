@@ -6,7 +6,7 @@
 #include <string.h>
 #include <R_ext/Lapack.h>
 #include "SFSI.h"
-//#include "utils_all.c"
+//#include "utils.c"
 
 //====================================================================
 //    Append to a vector v, k elements provided in another vector
@@ -59,28 +59,26 @@ void reduce_matrix(int nrow, int ncol, int irow, int icol, double *M)
 {
   long long j;
   long long offset;
-  long long nnew, pnew;
+  long long nnew;
+  //long long pnew;
 
-  long long nrow0 = (long long)nrow;
-  long long ncol0 = (long long)ncol;
-
-  nnew = nrow0;
+  nnew = nrow;
   if(irow > -1){
-    nnew = nrow0-1;
+    nnew = nrow-1;
     offset = nrow-irow-1;
     for(j=1; j<ncol; j++){
-      memmove(M + nnew*j - offset, M + nrow0*j - offset, nnew*sizeof(double));
+      memmove(M + nnew*j - offset, M + nrow*j - offset, nnew*sizeof(double));
     }
     if(offset>0){
-      memmove(M + nnew*ncol0 - offset,
-              M + nrow0*ncol0 - offset,
+      memmove(M + nnew*ncol - offset,
+              M + (long long)nrow*(long long)ncol - offset,
               offset*sizeof(double));
     }
   }
-  pnew = ncol;
+  //pnew = ncol;
   if(icol > -1){
-    pnew = ncol0-1;
-    offset = ncol0-icol-1;
+    //pnew = ncol-1;
+    offset = ncol-icol-1;
     if(offset>0){
       memmove(M + nnew*(long long)icol,
               M + nnew*((long long)icol+1),
@@ -135,13 +133,11 @@ void update_deleted_cols(int p, int k, double *R, int nz, double *z)
   long long i, j;
   long long pos1, pos2;
 
-  long long p0 = (long long)p;
-
   double eps = DBL_EPSILON;
 
-  for(i=(long long)k; i<p0-1; i++)
+  for(i=k; i<p-1; i++)
   {
-    pos1 = p0*i + i;
+    pos1 = p*i + i;
     a = R[pos1];
     b = R[pos1 + 1];
     if(fabs(b) > eps) //if(b!=0.0f)
@@ -161,9 +157,9 @@ void update_deleted_cols(int p, int k, double *R, int nz, double *z)
        R[pos1] = c*a - s*b;
        R[pos1 + 1] = s*a + c*b;
 
-       for(j=i+1; j<p0-1; j++)
+       for(j=i+1; j<p-1; j++)
        {
-         pos2 = p0*j + i;
+         pos2 = p*j + i;
          a = R[pos2];
          b = R[pos2 + 1];
          R[pos2] = c*a - s*b;
@@ -171,7 +167,7 @@ void update_deleted_cols(int p, int k, double *R, int nz, double *z)
        }
        for(j=0; j<nz; j++)
        {
-         pos2 = p0*j + i;
+         pos2 = p*j + i;
          a = z[pos2];
          b = z[pos2 + 1];
          z[pos2] = c*a - s*b;
@@ -558,10 +554,10 @@ SEXP R_lars(SEXP XtX_, SEXP Xty_,
 // contribution of the updated value bNew[j] in XtyHatNotj
 //====================================================================
 SEXP R_updatebeta(SEXP XtX_, SEXP Xty_,
-                   SEXP lambda_, SEXP alpha_, SEXP tol_,
-                   SEXP maxiter_, SEXP dfmax_, SEXP scale_,
-                   SEXP sd_, SEXP filename_,
-                   SEXP doubleprecision_, SEXP verbose_)
+                  SEXP lambda_, SEXP alpha_, SEXP tol_,
+                  SEXP maxiter_, SEXP dfmax_, SEXP scale_,
+                  SEXP sd_, SEXP filename_,
+                  SEXP doubleprecision_, SEXP verbose_)
 {
     double *lambda, *sd;
     double L1, L2, error;
@@ -589,8 +585,6 @@ SEXP R_updatebeta(SEXP XtX_, SEXP Xty_,
     int doubleprecision=asLogical(doubleprecision_);
     int save=!Rf_isNull(filename_);
 
-    long long p0 = (long long)p;
-
     PROTECT(lambda_=AS_NUMERIC(lambda_));
     lambda=NUMERIC_POINTER(lambda_);
 
@@ -612,8 +606,8 @@ SEXP R_updatebeta(SEXP XtX_, SEXP Xty_,
     memset(XtyHatNotj, 0, sizeof(double)*p);  // Since all b[j] are initially 0, all XtyHatNotj[j] are so
     for(k=0; k<nlambda; k++) df[k] = p;
 
-    // Allocate memory for B. Allocated memory is set to zero (as in calloc)
     if(save){
+      //Rprintf(" Saving binary file info for B ...\n");
       varsize = doubleprecision ? sizeof(double) : sizeof(float);
       vartype = 3;
       f=fopen(CHAR(STRING_ELT(filename_,0)),"wb");
@@ -622,9 +616,11 @@ SEXP R_updatebeta(SEXP XtX_, SEXP Xty_,
       fwrite(&vartype, sizeof(int), 1, f);
       fwrite(&varsize, sizeof(int), 1, f);
     }else{
+      //Rprintf(" Allocating memory for B ...\n");  // Allocated memory is set to zero (as in calloc)
       B = (double *) R_Calloc(p*nlambda, double);
     }
 
+    //Rprintf(" Starting beta updating ...\n");
     for(k=0; k<nlambda; k++)
     {
         L1 = alpha*lambda[k];
@@ -634,11 +630,10 @@ SEXP R_updatebeta(SEXP XtX_, SEXP Xty_,
         while(iter<maxiter && error>tol)
         {
             iter++;
-            //Rprintf(" iter=%d\n",iter);
             error = 0;
-            for(j=0; j<p0; j++)
+            for(j=0; j<p; j++)
             {
-                // varj = XtX[p0*j + j];  // Variance of predictor j
+                // varj = XtX[p*j + j];  // Variance of predictor j
                 // bOLS = (Xty[j] - XtyHat[j])/varj;
                 bNew = soft_threshold(Xty[j] - XtyHatNotj[j], L1)/(1+L2);
 
@@ -646,7 +641,7 @@ SEXP R_updatebeta(SEXP XtX_, SEXP Xty_,
                 //Rprintf(" j=%d. XtyHatNotj=%1.8f bOLS=%1.8f  bNew=%1.8f  delta=%f\n",j+1,XtyHatNotj[j],Xty[j]-XtyHatNotj[j], bNew, delta);
                 if(fabs(delta)>0){ // Update only if there is a change
                   // Update XtyHatNotj for all k!=j: XtyHatNotj[k] <- XtyHatNotj[k] + XtX[k,k]*(bNew[j]-b[j])
-                  F77_NAME(daxpy)(&p, &delta, XtX + p0*j, &inc1, XtyHatNotj, &inc1);
+                  F77_NAME(daxpy)(&p, &delta, XtX + p*j, &inc1, XtyHatNotj, &inc1);
 
                   XtyHatNotj[j] -= delta; // Except for k=j. delta*varj
                   if(fabs(delta)>error){
@@ -666,13 +661,13 @@ SEXP R_updatebeta(SEXP XtX_, SEXP Xty_,
         F77_NAME(dcopy)(&p, b, &inc1, b0, &inc1);
 
         if(scale){
-          for(j=0; j<p0; j++){
+          for(j=0; j<p; j++){
             b0[j] = b0[j]/sd[j];
           }
         }
 
         df[k] = 0;
-        for(j=0; j<p0; j++){
+        for(j=0; j<p; j++){
           if(fabs(b0[j])>0) df[k]++;
         }
 
@@ -680,7 +675,7 @@ SEXP R_updatebeta(SEXP XtX_, SEXP Xty_,
           if(doubleprecision){
             fwrite(b0, varsize, p, f);
           }else{  // Cast to float one by one
-            for(j=0; j<p0; j++){
+            for(j=0; j<p; j++){
               valuefloat = b0[j];
               fwrite(&valuefloat, varsize, 1, f);
             }
@@ -694,6 +689,7 @@ SEXP R_updatebeta(SEXP XtX_, SEXP Xty_,
         }
     }
 
+    //Rprintf(" Writting results: lambda, nsup, B ...\n");
     lambda2_=PROTECT(Rf_allocVector(REALSXP, k));
     memcpy(NUMERIC_POINTER(lambda2_), lambda, k*sizeof(double));
 
@@ -701,8 +697,8 @@ SEXP R_updatebeta(SEXP XtX_, SEXP Xty_,
     memcpy(INTEGER_POINTER(df_), df, k*sizeof(int));
 
     if(save){
-      fseek(f, 4, SEEK_SET); // Save the final number of solutions
-      fwrite(&k, 4, 1, f);
+      fseek(f, sizeof(int), SEEK_SET); // Save the final number of solutions
+      fwrite(&k, sizeof(int), 1, f);
       fclose(f);
       B_ = R_NilValue;
     }else{

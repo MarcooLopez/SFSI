@@ -48,7 +48,7 @@ is a diagonal matrix of dimension \code{n} containing the ridge parameter
 
 For the multitrait case, \code{a} and \ifelse{html}{\out{&lambda;}}{\eqn{\lambda}{lambda}} might take a matrix form and in this case, the penalization will adopt a kronecker (see \code{help(kronecker)}) form:
 
-%\ifelse{html}{\out{<p style='text-align:center'>kronecker(<b>a</b>,<b>A</b>) + kronecker(<b>&lambda;</b>,<b>D</b>)</p>}}{\deqn{kronecker(\textbf{a},\textbf{A}) + kronecker(\textbf{\lambda},\textbf{D})}{kronecker(a,A) + kronecker(lambda,D)}}
+\ifelse{html}{\out{<p style='text-align:center'>kronecker(<b>a</b>,<b>A</b>) + kronecker(<b>&lambda;</b>,<b>D</b>)</p>}}{\deqn{kronecker(\textbf{a},\textbf{A}) + kronecker(\boldsymbol{\lambda},\textbf{D})}{kronecker(a,A) + kronecker(lambda,D)}}
 
 }
 \examples{

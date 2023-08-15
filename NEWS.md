@@ -1,4 +1,4 @@
-### Version 1.3.0 (Aug-13-2023)
+### Version 1.3.0 (Aug-15-2023)
 
 **New features**
 

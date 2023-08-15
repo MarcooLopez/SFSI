@@ -1,8 +1,15 @@
+#ifndef  USE_FC_LEN_T
+# define USE_FC_LEN_T
+#endif
 #include <R.h>
 #include <stdio.h>
 #include <Rmath.h>
 #include <Rinternals.h>
 #include <R_ext/Lapack.h>
+#include <Rconfig.h>
+#ifndef FCONE
+# define FCONE
+#endif
 
 //====================================================================
 // Return 1 if the all elements in set1 are
@@ -79,7 +86,8 @@ void matrix_vector_product(int nrow,
 
   trans = transpose ? "T" : "N";
 
-  F77_NAME(dgemv)(trans, &nrow, &ncol, a, A, &nrow, x, &incx, &beta, y, &inc1);
+  F77_NAME(dgemv)(trans, &nrow, &ncol, a, A, &nrow, x, &incx,
+                  &beta, y, &inc1 FCONE);
 }
 
 //====================================================================
@@ -95,7 +103,8 @@ void matrix_matrix_product(int nrowA, int ncolA, int ncolB, double *A,
   double beta=0;
   double one=1;
 
-  F77_NAME(dgemm)(trans,trans,&nrowA,&ncolB,&ncolA,&one,A,&nrowA,B,&ncolA,&beta,C,&nrowA);
+  F77_NAME(dgemm)(trans,trans,&nrowA,&ncolB,&ncolA,&one,A,&nrowA,
+                  B,&ncolA,&beta,C,&nrowA FCONE FCONE);
 }
 
 //====================================================================
@@ -112,7 +121,8 @@ void crossproduct(int nrow, int ncolA, int ncolB,
   double beta=0;
   double one=1;
 
-  F77_NAME(dgemm)(trans1,trans2,&ncolA,&ncolB,&nrow,&one,A,&nrow,B,&nrow,&beta,C,&ncolA);
+  F77_NAME(dgemm)(trans1,trans2,&ncolA,&ncolB,&nrow,&one,A,&nrow,
+                  B,&nrow,&beta,C,&ncolA FCONE FCONE);
 }
 
 //====================================================================
@@ -129,7 +139,8 @@ void tcrossproduct(int nrowA, int ncol, int nrowB,
   double beta=0;
   double one=1;
 
-  F77_NAME(dgemm)(trans1,trans2,&nrowA,&nrowB,&ncol,&one,A,&nrowA,B,&nrowB,&beta,C,&nrowA);
+  F77_NAME(dgemm)(trans1,trans2,&nrowA,&nrowB,&ncol,&one,A,&nrowA,
+                  B,&nrowB,&beta,C,&nrowA FCONE FCONE);
 }
 
 //====================================================================
@@ -158,7 +169,7 @@ void matrix_vector_product_tri(int n,
 
   F77_NAME(dcopy)(&n, x, &incx, y, &inc1); // copy x to y
 
-  F77_NAME(dtrmv)(uplo, trans, diag, &n, A, &n, y, &inc1);
+  F77_NAME(dtrmv)(uplo, trans, diag, &n, A, &n, y, &inc1 FCONE FCONE FCONE);
 }
 
 //====================================================================
@@ -320,7 +331,7 @@ void backsolvet(int n, double *A, double *b)
   char *diag = "N";
   int inc1=1;
 
-  F77_NAME(dtrsv)(uplo, trans, diag, &n, A, &n, b, &inc1);
+  F77_NAME(dtrsv)(uplo, trans, diag, &n, A, &n, b, &inc1 FCONE FCONE FCONE);
 }
 
 void backsolve(int n, double *A, double *b)
@@ -330,7 +341,7 @@ void backsolve(int n, double *A, double *b)
   char *diag = "N";
   int inc1=1;
 
-  F77_NAME(dtrsv)(uplo, trans, diag, &n, A, &n, b, &inc1);
+  F77_NAME(dtrsv)(uplo, trans, diag, &n, A, &n, b, &inc1 FCONE FCONE FCONE);
 }
 
 //====================================================================
