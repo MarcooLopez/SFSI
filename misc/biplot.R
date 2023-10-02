@@ -60,30 +60,30 @@ text_arrow_pos <- function(x, y, min.angle=10)
 # scores.label <- scores.point <- loadings.arrow <- TRUE; text.position="top"
 
 biplot2 <- function(X, center = TRUE, scale = FALSE,
-                    title = "PCA - biplot", linewidth = 0.5,
-                    scores.group = NULL, loadings.group = NULL,
-									  scores.color = "darkorange4", loadings.color = "royalblue4",
-                    text.size = 2.5, point.size = 1.5, arrow.text.size = 3.2,
-										text.position = c("top","right","bottom","left","center","topleft","topright","bottomleft","bottomright"),
-										x.disp = 0.6, y.disp = 0.6, arrow.size = 3.1,
-                    scores.point = TRUE, scores.label = TRUE,
-										show.origin = TRUE, origin.color = "gray65",
-										expand.x = 0.06, expand.y = 0.06,
-									  loadings.arrow = TRUE)
+                title = "PCA - biplot", linewidth = 0.5,
+                scores.group = NULL, loadings.group = NULL,
+		scores.color = "darkorange4", loadings.color = "royalblue4",
+                text.size = 2.5, point.size = 1.5, arrow.text.size = 3.2,
+		text.position = c("top","right","bottom","left","center","topleft","topright","bottomleft","bottomright"),
+		x.disp = 0.6, y.disp = 0.6, arrow.size = 3.1,
+                scores.point = TRUE, scores.label = TRUE,
+		show.origin = TRUE, origin.color = "gray65",
+		expand.x = 0.06, expand.y = 0.06,
+		loadings.arrow = TRUE)
 {
 	text.position <- match.arg(text.position)
 
   tmp <- svd(scale(X, center=center, scale=scale))
   U <- tmp$u[,1:2]
-	V <- tmp$v[,1:2]
+  V <- tmp$v[,1:2]
   SD <- tmp$d
-	datU <- data.frame(names=rownames(X),PC1=U[,1],PC2=U[,2])
-	datV <- data.frame(names=colnames(X),PC1=V[,1],PC2=V[,2])
+  datU <- data.frame(names=rownames(X),PC1=U[,1],PC2=U[,2])
+  datV <- data.frame(names=colnames(X),PC1=V[,1],PC2=V[,2])
 
-	VAR <- SD^2
-	tmp <- (100*VAR/sum(VAR))
-	xlab0 <- paste0("PC1 (",sprintf('%.1f',tmp[1]),"%)")
-	ylab0 <- paste0("PC2 (",sprintf('%.1f',tmp[2]),"%)")
+  VAR <- SD^2
+  tmp <- (100*VAR/sum(VAR))
+  xlab0 <- paste0("PC1 (",sprintf('%.1f',tmp[1]),"%)")
+  ylab0 <- paste0("PC2 (",sprintf('%.1f',tmp[2]),"%)")
 
   # Center and  scale to -1, 1
   scalePC <- function(x){
@@ -97,20 +97,20 @@ biplot2 <- function(X, center = TRUE, scale = FALSE,
   datV$PC1 <- scalePC(datV$PC1)
   datV$PC2 <- scalePC(datV$PC2)
 
-	theme0 <- theme(plot.title = element_text(hjust=0.5),
-									panel.grid.major=element_blank(),
-							    panel.grid.minor=element_blank())
+  theme0 <- theme(plot.title = element_text(hjust=0.5),
+		  panel.grid.major=element_blank(),
+	          panel.grid.minor=element_blank())
 
   # Scores setting
   gpname1 <- ""; guide_label <- guide_point <- 'none'
   if(is.null(scores.group)){
     datU <- data.frame(datU, group=factor("none"))
-		stopifnot(length(loadings.color)==1)
-		names(loadings.color) <- "none"
+    stopifnot(length(loadings.color)==1)
+    names(loadings.color) <- "none"
   }else{
-		stopifnot(all(rownames(X) %in% rownames(scores.group)))
+    stopifnot(all(rownames(X) %in% rownames(scores.group)))
     datU <- data.frame(datU, group=as.character(scores.group[rownames(X),1]))
-		datU$group <- factor(datU$group)
+    datU$group <- factor(datU$group)
 		if(length(scores.color) != nlevels(datU$group)){
 			scores.color <- RColorBrewer::brewer.pal(8,"Dark2")[1:nlevels(datU$group)]
 			names(scores.color) <- levels(datU$group)
