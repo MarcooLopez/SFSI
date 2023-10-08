@@ -56,8 +56,8 @@ biplot2 <- function(X, center = TRUE, scale = FALSE,
   	gpname1 <- ""; guide_label <- guide_point <- 'none'
   	if(is.null(scores.group)){
     	datU <- data.frame(datU, group=factor("none"))
-		stopifnot(length(loadings.color)==1)
-		names(loadings.color) <- "none"
+		stopifnot(length(scores.color)==1)
+		names(scores.color) <- "none"
   	}else{
 		stopifnot(all(rownames(X) %in% rownames(scores.group)))
     	datU <- data.frame(datU, group=as.character(scores.group[rownames(X),1]))
