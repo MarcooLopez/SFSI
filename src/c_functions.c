@@ -1,13 +1,5 @@
-#include <R.h>
-#include <stdio.h>
-#include <Rmath.h>
-#include <Rinternals.h>
-#include <Rdefines.h>
-#include <string.h>
-#include <R_ext/Lapack.h>
 #include "SFSI.h"
 //#include "utils.c"
-
 
 char* format_file_size(long long file_size)
 {
@@ -21,7 +13,7 @@ char* format_file_size(long long file_size)
   }
   double fs = (double)file_size/pow(1000,3.0-k);
   char *out = (char*)malloc(100*sizeof(char));;
-  sprintf(out,"%.2f",fs);
+  snprintf(out, 100, "%.2f", fs);
   strcat(out, " ");
   strcat(out, ns[k]);
 

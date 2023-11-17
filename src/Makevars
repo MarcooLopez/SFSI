@@ -6,14 +6,12 @@ R_SOURCES = \
 			c_functions.o \
 			c_cov2cor.o \
 			c_cov2dist.o \
-			c_penalize_cov.o \
-			c_lasso.o \
+			c_lars.o \
+			c_solveEN.o \
 			c_blup.o \
 			c_prune.o \
-			c_triangular.o \
-			c_kronecker.o \
 			init.o \
-			utils/utils.o
+			utils.o
 
 OBJECTS = $(R_SOURCES)
 

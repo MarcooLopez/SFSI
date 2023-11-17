@@ -1,3 +1,10 @@
+### Version 1.3.1 (Nov-17-2023)
+
+  - Old dependencies R-packages were removed
+  - Calls to functions 'Kronecker' and 'Kronecker_cov' from the tensorEVD R-package were added
+  - Functions to work with triangular matrices were removed
+
+
 ### Version 1.3.0 (Aug-15-2023)
 
 **New features**
@@ -70,7 +77,7 @@
   - All C-based routines: a 'long long' variable type, instead of an 'int' type, was used for indexing arrays (matrices). This change allows dealing with matrices whose length (number of rows x number of columns) exceed 2^31-1 = 2147483647 (e.g., a matrix of 46341 x 46341)  
 
 
-### Version 0.3.0 (April-29-2021)
+### Version 0.3.0 (Apr-29-2021)
 
 **Features**
 

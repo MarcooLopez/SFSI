@@ -15,7 +15,7 @@ cov2cor2(A, a = 1, inplace = FALSE)
 \item{inplace}{\code{TRUE} or \code{FALSE} to whether operate directly on the input matrix.
 When \code{TRUE} no result is produced but the input \code{A} is modified. Default \code{inplace=FALSE}}
 
-\item{a}{(numeric) A number to multiply the whole resulting matrix by. Default \code{a=1}}
+\item{a}{(numeric) A number to multiply the whole resulting matrix by. Default \code{a = 1}}
 
 }
 \value{
@@ -81,16 +81,6 @@ Variances are obtained from the diagonal values while covariances are obtained f
   # (it must equal (but faster) to:)
   R0 = cov2cor(A)
   max(R-R0)
-  
-  # Upper triangular matrix
-  A0 = upperTri(A)
-  R0 = cov2cor2(A0)
-  unpackTri(R0)[1:5,1:5]
-
-  # Lower triangular matrix
-  A0 = lowerTri(A)
-  D0 = cov2dist(A0)
-  unpackTri(D0)[1:5,1:5]
   
   # Using void=TRUE
   A[1:5,1:5]

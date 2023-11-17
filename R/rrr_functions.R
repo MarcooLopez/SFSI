@@ -1,8 +1,139 @@
 
 #====================================================================
+#  setLambda, setX, and setK are functions used to set initial parameters
+#  for lambda, X, and K in the solveEN and SSI functions
+#====================================================================
+setLambda <- function(Gamma, alpha = 1, lambda = NULL, nlambda = 100,
+                      lambda.min = .Machine$double.eps^0.5,
+                      lambda.max = NULL, common.lambda = TRUE,
+                      verbose = TRUE)
+{
+  if(length(dim(Gamma)) != 2L){
+    Gamma <- matrix(Gamma, ncol=1L)
+  }
+  q <- ncol(Gamma)
+
+  if(is.null(lambda))
+  {
+    if(common.lambda){   # Grid of lambda common to all columns of Gamma
+      if(is.null(lambda.max)){
+        lambda.max <- ifelse(alpha > .Machine$double.eps, max(abs(Gamma)/alpha), 5)
+      }else{
+        if(length(lambda.max) > 1L){
+          if(verbose){
+            message(" Multiple values in 'lambda.max' for 'common.lambda = TRUE', only the first one will be used")
+          }
+          lambda.max <- lambda.max[1]
+        }
+      }
+      lambda <- matrix(exp(seq(log(lambda.max), log(lambda.min), length=nlambda)), ncol=1)
+
+    }else{     # Grid of lambda specific to each column of Gamma
+      if(is.null(lambda.max)){
+        lambda.max <- apply(Gamma,2,function(x){
+           ifelse(alpha > .Machine$double.eps, max(abs(x)/alpha), 5)
+        })
+      }else{
+        if(length(lambda.max) != q){
+          if(length(lambda.max) == 1L){
+            if(verbose){
+               message(" A unique value of 'lambda.max' was provided but ",q,
+                       " are needed, this value will be used in common")
+            }
+            lambda.max <- rep(lambda.max[1], q)
+          }else{
+            stop("Input 'lambda.max' must be of length = ", q)
+          }
+        }
+      }
+      lambda <- matrix(NA, nrow=nlambda, ncol=q)
+      for(k in 1:q){
+        lambda[,k] <- exp(seq(log(lambda.max[k]), log(lambda.min), length=nlambda))
+      }
+    }
+  }else{
+    if(length(dim(lambda)) != 2L){
+      lambda <- matrix(lambda, ncol=1L)
+    }
+    if(ncol(lambda) != q){
+      if(ncol(lambda) == 1L){
+        if(verbose){
+          message(" A common ",ifelse(nrow(lambda)==1,"value","grid")," of 'lambda' will be used")
+        }
+      }else{
+        stop("Number of columns of 'lambda' must be equal to ", q)
+      }
+    }
+
+    if(any(apply(lambda, 2L, function(x) any(diff(x) > 0)))){
+      stop("Input 'lambda' must be a matrix of decreasing numbers")
+    }
+  }
+  return(lambda)
+}
+
+#====================================================================
+
+setX <- function(n, X = NULL)
+{
+  if(is.null(X)){   # Only an intercept
+    return(stats::model.matrix(~1, data=data.frame(rep(1,n))))
+
+  }else{
+    if(length(dim(X)) == 2L){
+      if(nrow(X) != n){
+        stop("Input 'X' must be a matrix with nrow(X) = ",n)
+      }
+      return(as.matrix(X))
+    }else{
+      if(length(X) != n){
+        stop("Input 'X' must be a vector with length(X) = ",n)
+      }
+      X <- stats::model.matrix(~X)
+      if(ncol(X) > 2L){
+        colnames(X) <- gsub("^X","",colnames(X))
+      }
+      return(X)
+    }
+  }
+}
+
+#====================================================================
+
+setK <- function(n, Z = NULL, K = NULL)
+{
+  if(is.null(Z) & is.null(K)){
+    return(diag(n))
+
+  }else{
+    if(is.null(Z)){  # Case G=K
+      if(((sum(dim(K))/2)^2) != n^2){
+        stop("Input 'K' must be a squared matrix of dimension = ",n)
+      }
+      return(K)
+
+    }else{
+      if(ifelse(length(dim(Z)) == 2L, nrow(Z)!=n, TRUE)){
+        stop("Input 'Z' must be a matrix with nrow(Z) = ",n)
+      }
+
+      if(is.null(K)){
+        return(tcrossprod(Z))  # G = ZKZ' = ZZ' with K=I
+      }else{
+        if((sum(dim(K))/2) != ncol(Z)){
+          stop("Input 'K' must be a squared matrix of dimension = nrow(Z) = ",ncol(Z))
+        }
+        return(tcrossprod(Z,tcrossprod(Z,K)))  # G = ZKZ'
+      }
+    }
+  }
+}
+
+#====================================================================
 # Obtain a list with common trn elements for all columns in 'y'
 #====================================================================
-get_common_trn <- function(y){
+get_common_trn <- function(y)
+{
   trn_list0 <- lapply(1:ncol(y), function(j)which(!is.na(y[,j])))
   ID <- 1:ncol(y)
   trn_list <- list()
@@ -99,7 +230,8 @@ map_set <- function(n, q, x=NULL, y=NULL, labels=NULL,
 
 #====================================================================
 #====================================================================
-get_summary_nsup <- function(object, map=NULL, eps = .Machine$double.eps){
+get_summary_nsup <- function(object, map=NULL, eps = .Machine$double.eps)
+{
 
   ntraits <- object$ntraits
   nlambda <- object$nlambda
@@ -136,7 +268,8 @@ get_summary_nsup <- function(object, map=NULL, eps = .Machine$double.eps){
 #====================================================================
 #====================================================================
 
-has_names <- function(A){
+has_names <- function(A)
+{
   if(length(dim(A)) == 2L){
     out <- length(unlist(dimnames(A))) == sum(dim(A))
   }else{
@@ -149,7 +282,8 @@ has_names <- function(A){
 #====================================================================
 #====================================================================
 
-capitalize <- function(string){
+capitalize <- function(string)
+{
   substr(string,1,1) <- toupper(substr(string,1,1))
   string
 }
@@ -157,7 +291,8 @@ capitalize <- function(string){
 #====================================================================
 #====================================================================
 
-circleFun <- function(center=c(0,0), radius=1, n=200){
+circleFun <- function(center=c(0,0), radius=1, n=200)
+{
     tt <- seq(0, 2*pi, length.out = n)
     xx <- center[1] + radius * cos(tt)
     yy <- center[2] + radius * sin(tt)
@@ -282,99 +417,36 @@ get_net <- function(X, MAP, symmetric,
 #====================================================================
 #====================================================================
 
-info_matrix <- function(A, check = TRUE)
-{
-  nrows <- ncols <- type <- byrow <- diag <- NA
-  dm <- dim(A)
-  if(length(dm) == 2L){
-    if(dm[1] == dm[2]){
-      diag <- TRUE
-    }
-    nrows <- dm[1]
-    ncols <- dm[2]
-    type <- "full"
-  }else{
-    n <- type <- byrow <- diag <- NULL
-    if('n' %in% names(attributes(A))){
-      n <- attr(A, "n")
-    }else{
-      if(check){
-        stop("Set attribute 'n' (dimension of the matrix) as \"attr(A, 'n') <- \"")
-      }
-    }
-    if(!is.null(n)){
-      if(as.integer(n) != n){
-        stop("Dimmension 'n' must be a positive integer")
-      }
-      if(length(A)==(n*(n+1)/2) | length(A)==(n*(n-1)/2)){
-        diag <- ifelse(length(A)==n*(n+1)/2, TRUE, FALSE)
-      }else{
-        stop("Input 'A' must contain either n(n+1)/2 or n(n-1)/2 entries")
-      }
-    }
+.onAttach <- function(libname, pkgname){
 
-    if('uplo' %in% names(attributes(A))){
-      type <- attr(A, "uplo")
-    }else{
-      if(check){
-        stop("Set attribute 'uplo': either \"attr(A, 'uplo') = 'upper'\" or \"= 'lower'\"")
-      }
-    }
-    if(!is.null(type)){
-      if(!type %in% c("upper","lower")){
-        stop("Attribute 'uplo' must be either 'upper' or 'lower'")
-      }
-    }
+  addsp <- function(n)paste(rep(" ",n), collapse="")
 
-    if('byrow' %in% names(attributes(A))){
-      byrow <- attr(A, "byrow")
-    }else{
-      if(check){
-        stop("Set attribute 'byrow': either \"attr(A, 'byrow') <- TRUE\" or \"<- FALSE\"")
-      }
-    }
-    if(!is.null(byrow)){
-      if(!is.logical(byrow)){
-        stop("Attribute 'byrow' must be of the logical type (TRUE or FALSE)")
-      }
-    }
-    nrows <- ncols <- n
-  }
+  tmp <- paste0("Version: ",utils::packageVersion(pkgname),
+                " (",utils::packageDate(pkgname),")")
 
-  return(list(nrows=nrows, ncols=ncols, type=type, diag=diag, byrow=byrow))
-}
-
-#====================================================================
-#====================================================================
-
-isTri <- function(A){
-  if(length(dim(A))!=2L){
-    out <- all(c("uplo","n","include.diag","byrow") %in% names(attributes(A)))
-  }else{
-    out <- FALSE
-  }
-  return(out)
-}
-
-#====================================================================
-#====================================================================
-
-.onAttach <- function(libname, pkgname) {
   packageStartupMessage("
-  |=======================================================================|
-  |    ._______. ._______. ._______. ._______.                            |
-  |    | ._____| | ._____| | ._____| |__. .__|                            |
-  |    | |_____. | |___.   | |_____.    | |                               |
-  |    |_____. | | .___|   |_____. |    | |      Authors:                 |
-  |    ._____| | | |       ._____| | .__| |__.     Marco Lopez-Cruz       |
-  |    |_______| |_|       |_______| |_______|     Gustavo de los Campos  |
-  |                                                                       |
-  |    Sparse Family and Selection Index. Version 1.3.0 (Aug 15, 2023)    |
-  |    Type 'citation('SFSI')' to know how to cite SFSI                   |
-  |    Type 'help(package='SFSI',help_type='html')' to see help           |
-  |    Type 'browseVignettes('SFSI')' to see documentation                |
-  |    Type 'demo(package='SFSI')' to see demos                           |
-  |                                                                       |
-  |=======================================================================|
+  |===============================================================|
+  |    ._______. ._______. ._______. ._______.                    |
+  |    | ._____| | ._____| | ._____| |__. .__|                    |
+  |    | |_____. | |___.   | |_____.    | |        Sparse         |
+  |    |_____. | | .___|   |_____. |    | |        Family and     |
+  |    ._____| | | |       ._____| | .__| |__.     Selection      |
+  |    |_______| |_|       |_______| |_______|     Index          |
+  |                                                               |
+  |    ",tmp,addsp(59-nchar(tmp)),"|
+  |    Authors: Marco Lopez-Cruz & Gustavo de los Campos          |
+  |                                                               |
+  |    Type 'citation('SFSI')' to know how to cite this package   |
+  |    Type 'help(package='SFSI', help_type='html')' to see help  |
+  |    Type 'browseVignettes('SFSI')' to see documentation        |
+  |    Type 'demo(package='SFSI')' to see demos                   |
+  |                                                               |
+  |===============================================================|
   ")
+
+  suppressWarnings(out <- utils::old.packages(repos="https://cloud.r-project.org"))
+  if(pkgname %in% rownames(out)){
+    packageStartupMessage(" Note: New version ",out[pkgname,"ReposVer"],
+            " of this package is available on CRAN")
+  }
 }

@@ -1,8 +1,8 @@
 
 solveEN <- function(Sigma, Gamma, alpha = 1, lambda = NULL,
                     nlambda = 100, lambda.min = .Machine$double.eps^0.5,
-                    lambda.max = NULL, common.lambda = TRUE,
-                    nsup.max = NULL, scale = TRUE, tol = 1E-5,
+                    lambda.max = NULL, common.lambda = TRUE, beta0 = NULL,
+                    nsup.max = NULL, scale = TRUE, sdx = NULL, tol = 1E-5,
                     maxiter = 1000, mc.cores = 1L, save.at = NULL,
                     precision.format = c("double","single"),
                     fileID = NULL, verbose = FALSE)
@@ -18,67 +18,44 @@ solveEN <- function(Sigma, Gamma, alpha = 1, lambda = NULL,
     }else{
       Gamma <- matrix(Gamma, ncol=1L)
     }
-    dimnames(Sigma) <- NULL
     p <- nrow(Gamma)
     q <- ncol(Gamma)
 
     if((sum(dim(Sigma))/2)^2 != p^2){
-      stop("Object 'Sigma' must be a p*p squared matrix where p=nrow(Gamma)")
+      stop("Input 'Sigma' must be a squared matrix of dimension equal to nrow(Gamma)")
     }
 
     if(alpha<0 | alpha>1){ stop("Parameter 'alpha' must be a number between 0 and 1")}
     stopifnot(maxiter>0)
-    if(tol<.Machine$double.eps){
-      stop("Parameter 'tol' must be > 0")
+    if(tol < .Machine$double.eps){
+      stop("Input 'tol' must be > 0")
     }
-
-    storage.mode(Sigma) <- "double"
-    storage.mode(Gamma) <- "double"
     nsup.max <- ifelse(is.null(nsup.max), p, as.integer(nsup.max))
 
+    scaleb <- TRUE
     if(scale){
       sdx <-  sqrt(diag(Sigma))
       cov2cor2(Sigma, inplace=TRUE)     # Equal to Sigma=cov2cor(Sigma) but faster
       Gamma <- sweep(Gamma, 1L, sdx, FUN="/")
     }else{
-      sdx <- rep(1, p)
+      if(is.null(sdx)){
+        scaleb <- FALSE
+      }else{
+        if(length(sdx) != p){
+          stop("Input 'sdx' must be a numeric vector of length = ",p)
+        }
+      }
     }
 
-    if(is.null(lambda)){
-      if(!is.null(lambda.max)){
-        if(length(lambda.max)>1L & length(lambda.max)!=q){
-            stop("Length of 'lambda.max' must be the same as ncol(Gamma)=",q)
-        }
-      }
-      if(common.lambda){
-        if(is.null(lambda.max)){
-         lambda.max <- ifelse(alpha > .Machine$double.eps,max(abs(Gamma)/alpha),5)
-        }
-        lambda <- matrix(exp(seq(log(lambda.max),log(lambda.min),length=nlambda)), ncol=1)
-      }else{
-        lambda <- do.call(cbind,lapply(1:q,function(k){
-          if(is.null(lambda.max)){
-            lambda.maxi <- ifelse(alpha > .Machine$double.eps,max(abs(Gamma[,k])/alpha),5)
-          }else{
-            lambda.maxi <- lambda.max[k]
-          }
-          exp(seq(log(lambda.maxi),log(lambda.min),length=nlambda))
-        }))
-      }
-    }else{
-      if(length(dim(lambda))==2L){
-        if(ncol(lambda) > 1 & ncol(lambda) < q){
-          stop("Number of columns of 'lambda' must be equal to the number of columns in 'Gamma'")
-        }
-      }else{
-        lambda <- matrix(lambda, ncol=1)
-      }
-      if(any(apply(lambda, 2L, function(x) any(diff(x) > 0)))){
-        stop("Object 'lambda' must be a matrix of decreasing numbers")
-      }
-    }
-    storage.mode(lambda) <- "double"
+    # Get lambda grid. Diagonal values in Sigma are assumed to be zero
+    lambda <- setLambda(Gamma, alpha=alpha, lambda=lambda, nlambda=nlambda,
+                        lambda.min=lambda.min, lambda.max=lambda.max,
+                        common.lambda=common.lambda,verbose=FALSE)
     nlambda <- nrow(lambda)
+
+    if(ifelse(is.null(beta0),FALSE,length(beta0)!=p)){
+      stop("Input 'beta0' must be a numeric vector of length = ",p)
+    }
 
     flagsave <- as.logical(!is.null(save.at))
     verbose2 <- as.logical(verbose & q==1L)
@@ -99,12 +76,12 @@ solveEN <- function(Sigma, Gamma, alpha = 1, lambda = NULL,
         filename <- NULL
       }
 
-      #dyn.load("c_lasso.so")
+      #dyn.load("c_solveEN.so")
       res <- .Call('R_updatebeta', Sigma, Gamma[,ind],
-                  lambda0, alpha, tol, maxiter, nsup.max,
-                  scale, sdx, filename,
+                  lambda0, alpha, beta0, tol, maxiter, nsup.max,
+                  scaleb, sdx, filename,
                   doubleprecision, verbose2)
-      #dyn.unload("c_lasso.so")
+      #dyn.unload("c_solveEN.so")
 
       if(verbose & q>1L){
         cat(1,file=con,append=TRUE)
@@ -134,13 +111,13 @@ solveEN <- function(Sigma, Gamma, alpha = 1, lambda = NULL,
 
     # Run the analysis for 1:ncol(Gamma)
     if(verbose & q>1L){
-      pb = utils::txtProgressBar(style=3)
+      pb <- utils::txtProgressBar(style=3)
       con <- tempfile(tmpdir=tmpdir0)
     }
     if(mc.cores == 1L){
-      out = lapply(X=seq(q), FUN=compApply)
+      out <- lapply(X=seq(q), FUN=compApply)
     }else{
-      out = parallel::mclapply(X=seq(q), FUN=compApply, mc.cores=mc.cores)
+      out <- parallel::mclapply(X=seq(q), FUN=compApply, mc.cores=mc.cores)
     }
     if(verbose & q>1L) {
       close(pb); unlink(con)
@@ -155,7 +132,7 @@ solveEN <- function(Sigma, Gamma, alpha = 1, lambda = NULL,
                 lambda = lapply(out, function(x)x$lambda),
                 nsup = lapply(out, function(x)x$nsup),
                 beta = lapply(out, function(x)x$beta)
-              )
+               )
 
     if(q == 1L){
       out$nsup <- out$nsup[[1]]

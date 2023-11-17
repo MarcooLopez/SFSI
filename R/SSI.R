@@ -18,7 +18,6 @@ SSI <- function(y, X = NULL, b = NULL, Z = NULL, K,
   }else{
     y <- matrix(y, ncol=1L)
   }
-  dimnames(y) <- NULL
   n <- nrow(y)
   ntraits <- ncol(y)   # Number of traits
 
@@ -39,7 +38,6 @@ SSI <- function(y, X = NULL, b = NULL, Z = NULL, K,
     }
     stopifnot(storage.mode(trn_tst) == "logical")
   }
-  dimnames(trn_tst) <- NULL
 
   trn <- which(as.vector(trn_tst))
 
@@ -54,53 +52,12 @@ SSI <- function(y, X = NULL, b = NULL, Z = NULL, K,
   nTST <- length(tst)
 
   # Design matrix for fixed effects
-  BLUE <- TRUE
-  if(is.null(X)){   # Only an intercept
-    X <- model.matrix(~1, data=data.frame(rep(1,n)))
-    if(!intercept){
-      if(verbose){
-        message(" No intercept is estimated. Response is assumed to have mean zero")
-      }
-      BLUE <- FALSE
-    }
-
-  }else{
-    if(length(dim(X)) == 2L){
-      X <- as.matrix(X)
-    }else{
-      X <- stats::model.matrix(~X)
-      if(ncol(X) > 2L)  colnames(X)[-1] <- substr(colnames(X)[-1],2,nchar(colnames(X)[-1]))
-    }
+  BLUE <- ifelse(is.null(X) & !intercept, FALSE, TRUE)
+  if(verbose & !BLUE){
+    message(" No intercept is estimated. Response is assumed to have mean zero")
   }
-
-  if(!is.null(Z)){
-    if(length(dim(Z)) != 2L){
-       stop("Object 'Z' must be a matrix with nrow(Z)=n and ncol(Z)=nrow(K)")
-    }
-    K <- tcrossprod(Z, tcrossprod(Z,K))   # Z%*%K%*%t(Z)
-  }
-
-  isTriK <- FALSE
-  if(length(dim(K)) == 2L){
-    if(length(K) != n^2){
-      stop("Product Z K Z' must be a symmetrix matrix with number of rows\n",
-           "      (and columns) equal to the number of elements in 'y'")
-    }
-  }else{
-    isTriK <- isTri(K)
-    if(isTriK){
-      stopifnot(attr(K,'n') == n)
-    }else{
-      stop("Input 'K' must be a symmetric full or triangular matrix")
-    }
-  }
-  storage.mode(K) <- "double"
-
-  if(isTriK){
-    if(is.null(varU) | is.null(varE) | is.null(b)){
-        stop("Estimation of 'varU','varE', and 'b' is not implemented yet for triangular matrices")
-    }
-  }
+  X <- setX(n=n, X=X)
+  K <- setK(n=n, Z=Z, K=K)
 
   labels <- NULL
   if(has_names(K)){
@@ -125,16 +82,13 @@ SSI <- function(y, X = NULL, b = NULL, Z = NULL, K,
         }
       }else{
         stop("Convergence was not reached in the 'GEMMA' algorithm.\n",
-             "       Please provide variance components' estimates")
+             "       Provide variance components' estimates")
       }
     }else{   # Only estimate fixed effects as GLS
       if(is.null(b) & BLUE){
         b <- fitBLUP(y[trn,], X=X[trn, ,drop=FALSE], K=K[trn,trn],
                      BLUP=FALSE, varU=varU, varE=varE, verbose=FALSE)$b
       }
-    }
-    if(BLUE){
-      b <- t(t(b))
     }
 
   }else{   # Multitrait case
@@ -151,7 +105,7 @@ SSI <- function(y, X = NULL, b = NULL, Z = NULL, K,
       b <- res$b
 
       if(verbose){
-        message(" 'varU' and 'varE' were pairwise estimated using BLUP",
+        message(" 'varU' and 'varE' matrices were pairwise estimated using BLUP",
                 " with n=",length(trn0)," common records")
       }
 
@@ -159,7 +113,7 @@ SSI <- function(y, X = NULL, b = NULL, Z = NULL, K,
       if(is.null(b) & BLUE){
         if(length(trn0) == 0){
            stop("No common training for all response variables was found.\n",
-                "       Please provide an estimate for 'b'")
+                "       Provide an estimate for 'b'")
         }
         b <- fitBLUP(y[trn0,], X=X[trn0, ,drop=FALSE], K=K[trn0,trn0], BLUP=FALSE,
                      varU=diag(varU), varE=diag(varE), verbose=FALSE)$b
@@ -167,9 +121,14 @@ SSI <- function(y, X = NULL, b = NULL, Z = NULL, K,
     }
 
     if(length(dim(varU)) != 2L | length(dim(varE)) != 2L){
-      stop("'varU' and 'varE' must be matrices of dimension equal to ncol(y)=",ncol(y))
+      stop("Inputs 'varU' and 'varE' must be matrices of dimension equal to ncol(y)=",ncol(y))
     }
   }
+
+  # Getting K <- (varU*G)[trn,tst] and H <- (varU*G + varE*I)[trn,trn]
+  # for multitrait varU*G : Kronecker(varU,K) and varE*I : Kronecker(varE,I))
+  H <- tensorEVD::Kronecker_cov(K, Sigma=t(varU), Theta=varE, rows=trn, cols=trn)
+  K <- tensorEVD::Kronecker(varU, K, rows=trn, cols=tst)
 
   h2 <- varU/(varU + varE)
   if(any(diag(t(h2)) < 0.001) & verbose){
@@ -177,42 +136,31 @@ SSI <- function(y, X = NULL, b = NULL, Z = NULL, K,
   }
 
   # Adjusted training phenotypes
-  Xb <- c()
+  Xb <- NULL
   if(BLUE){
-    if(nrow(b) != ncol(X)){
-       stop("The length of 'b' must be the same as the number of columns of 'X'")
+    if(ifelse(ntraits==1L,length(b),nrow(b)) != ncol(X)){
+       stop("Number of fixed effects 'b' must be the same as the number of columns of 'X'")
     }
-    for(k in 1:ntraits){
-      Xb <- c(Xb, as.vector(X%*%b[,k]))
+    if(ntraits==1L){
+      Xb <- as.vector(X%*%b)
+    }else{
+      for(k in 1:ntraits){
+        Xb <- c(Xb, as.vector(X%*%b[,k]))
+      }
     }
     yTRN <- matrix(y[trn]-Xb[trn], nrow=1)
   }else{
     yTRN <- matrix(y[trn], nrow=1)
   }
 
-  # Getting K <- varU*G and H <- varU*G + varE*I
-  H <- penalize_cov(K, a=varU, lambda=varE, rows=trn, cols=trn, verbose=FALSE)
-  K <- Kronecker(varU, K, rows=trn, cols=tst, verbose=FALSE)
+  # Standardize matrices
+  sdx <-  sqrt(diag(H))
+  cov2cor2(H, inplace = TRUE)
+  K <- sweep(K, 1L, sdx, FUN = "/")
 
-  if(is.null(lambda)){
-    if(common.lambda){
-      sdx <-  sqrt(diag(H))
-      Cmax <- max(abs(sweep(K, 1L, sdx, FUN="/"))/alpha)
-      Cmax <- ifelse(alpha > .Machine$double.eps, Cmax, 5)
-      lambda <- exp(seq(log(Cmax),log(lambda.min),length=nlambda))
-    }
-  }else{
-    if(length(dim(lambda))==2L){
-      if(ncol(lambda)>1L & ncol(lambda)<nTST){
-         stop("Number of columns of 'lambda' must be equal to 'length(tst)'")
-      }
-    }else{
-      lambda <- matrix(lambda, ncol=1)
-    }
-    if(any(apply(lambda, 2L, function(x) any(diff(x)>0)))){
-        stop("Object 'lambda' must be a matrix of decreasing numbers")
-    }
-  }
+  lambda <- setLambda(K, alpha=alpha, lambda=lambda, nlambda=nlambda,
+                      lambda.min=lambda.min, lambda.max=NULL,
+                      common.lambda=common.lambda)
 
   name <- ifelse(is.null(name),"SSI",name)
 
@@ -222,7 +170,7 @@ SSI <- function(y, X = NULL, b = NULL, Z = NULL, K,
     tmp <- ""
   }else{
      if(!is.numeric(subset) & length(subset) != 2L){
-       stop("Object 'subset' must be a 2-elements vector")
+       stop("Input 'subset' must be a 2-elements vector")
      }
      sets <- sort(rep(1:subset[2],ceiling(nTST/subset[2]))[1:nTST])
      index <- which(sets == subset[1])
@@ -230,10 +178,13 @@ SSI <- function(y, X = NULL, b = NULL, Z = NULL, K,
      tmp <- paste0(" of ",length(tst))
      tst <- tst[index]
      K <- K[,index,drop=FALSE]
+     if(ncol(lambda)==nTST){
+       lambda <- lambda[,index,drop=FALSE]
+     }
   }
 
   if(verbose){
-    message(" Fitting ",ifelse(ntraits>1,paste("Multi-trait SSI for",ntraits,"traits"),"SSI"),
+    message(" Fitting a ",ifelse(ntraits==1L,"SSI",paste("Multi-trait SSI for",ntraits,"traits")),
             " with nTST=",length(tst),tmp," and nTRN=",length(trn))
   }
 
@@ -256,7 +207,8 @@ SSI <- function(y, X = NULL, b = NULL, Z = NULL, K,
                  common.lambda=common.lambda, tol=tol,
                  maxiter=maxiter, save.at=save.at, fileID=fileID,
                  verbose=verbose, mc.cores=mc.cores,
-                 precision.format=precision.format)
+                 precision.format=precision.format,
+                 scale=FALSE, sdx=sdx)
 
   if(length(tst) == 1L){
     nsup0 <- matrix(out$nsup, nrow=1)
@@ -282,8 +234,8 @@ SSI <- function(y, X = NULL, b = NULL, Z = NULL, K,
               nsup = nsup0, lambda = lambda0,
               beta = out$beta,
               file_beta=out$file_beta,
-              fileID=out$fileID,
-              precision.format=precision.format
+              fileID=out$fileID
+              #precision.format=precision.format
             )
 
   class(out) <- c("SSI")
@@ -291,7 +243,6 @@ SSI <- function(y, X = NULL, b = NULL, Z = NULL, K,
   # Save outputs if 'save.at' is not NULL
   if(!is.null(save.at)){
     save(out, file=outfile)
-    #out <- NULL
   }
 
   return(out)

@@ -5,7 +5,7 @@
 \usage{
 LARS(Sigma, Gamma, method=c("LAR","LASSO"),
      nsup.max = NULL, eps = .Machine$double.eps*100,
-     scale = TRUE, mc.cores = 1L, save.at = NULL,
+     scale = TRUE, sdx = NULL, mc.cores = 1L, save.at = NULL,
      precision.format = c("double","single"),
      fileID = NULL, verbose = FALSE)
 
@@ -27,8 +27,10 @@ Default \code{nsup.max=NULL} will calculate solutions for the entire lambda sequ
 
 \item{eps}{(numeric) An effective zero. Default is the machine precision}
 
-\item{scale}{\code{TRUE} or \code{FALSE} to scale matrix \code{Sigma} for variables with unit variance and scale \code{Gamma} by the standard deviation of the corresponding predictor
+\item{scale}{\code{TRUE} or \code{FALSE} to scale matrix \code{Sigma} for variables with unit variance and scale \code{Gamma} by the standard deviation (\code{sdx}) of the corresponding predictor
 taken from the diagonal of \code{Sigma}}
+
+\item{sdx}{(numeric vector) Scaling factor that will be used to scale the regression coefficients. When \code{scale = TRUE} this scaling factor vector is set to the squared root of the diagonal of \code{Sigma}, otherwise a provided value is used assuming that \code{Sigma} and \code{Gamma} are scaled}
 
 \item{mc.cores}{(integer) Number of cores used. When \code{mc.cores} > 1, the analysis is run in parallel for each column of \code{Gamma}. Default is \code{mc.cores=1}}
 

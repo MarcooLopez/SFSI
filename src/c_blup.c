@@ -1,9 +1,3 @@
-#include <R.h>
-#include <stdio.h>
-#include <Rinternals.h>
-#include <Rdefines.h>
-#include <Rmath.h>
-#include <R_ext/Lapack.h>
 #include "SFSI.h"
 //#include "utils.c"
 
@@ -11,132 +5,96 @@
 // Recursive quantities for the GEMMA algorithm:
 // a'Pib, a'PiPib, and a'PiPiPib, for any a and b
 //====================================================================
-double atPib(int i, int n, double *a, double *b,
-             double *w, double *dbar){
+double atPb(int i, int n, double *a, double *b, double *w, double *dbar){
   if(i == 0){  // atP0b - atP0w*btP0w/w1tP0w
-    int k;
-    double aPb=0, aPw=0, bPw=0, wPw=0;
-    for(k=0; k<n; k++){
-      aPb += a[k]*b[k]*dbar[k];
-      aPw += a[k]*w[n*i + k]*dbar[k];
-      bPw += b[k]*w[n*i + k]*dbar[k];
-      wPw += pow(w[n*i + k], 2)*dbar[k];
-    }
-    return(aPb-aPw*bPw/wPw);
+    return(ddot3(n,a,dbar,b) - ddot3(n,a,dbar,w + n*i)*ddot3(n,b,dbar,w + n*i)/ddot3(n,w + n*i,dbar,w + n*i));
 
   }else{
-    return(
-      atPib(i-1,n,a,b,w,dbar) -
-      atPib(i-1,n,a,w+n*i,w,dbar)*atPib(i-1,n,b,w+n*i,w,dbar)/atPib(i-1,n,w+n*i,w+n*i,w,dbar)
-    );
+    return(atPb(i-1,n,a,b,w,dbar) -
+           atPb(i-1,n,a,w+n*i,w,dbar)*atPb(i-1,n,b,w+n*i,w,dbar)/atPb(i-1,n,w+n*i,w+n*i,w,dbar));
   }
 }
 
 //==========================================
 
-double atPiPib(int i, int n, double *a, double *b,
-               double *w, double *dbar){
+double atPPb(int i, int n, double *a, double *b, double *w, double *dbar){
+  double aPw, bPw, wPw;
   if(i == 0){  // atP0P0b + (atP0w)(btP0w)/(wtP0P0w)^2 + ...
-    int k;
-    double aPw=0, bPw=0, wPw=0, aPPw=0, bPPw=0, wPPw=0, aPPb=0;
-    for(k=0; k<n; k++){
-      aPw += a[k]*w[n*i + k]*dbar[k];
-      bPw += b[k]*w[n*i + k]*dbar[k];
-      wPw += pow(w[n*i + k],2)*dbar[k];
-      aPPw += a[k]*w[n*i + k]*pow(dbar[k],2);
-      bPPw += b[k]*w[n*i + k]*pow(dbar[k],2);
-      wPPw += pow(w[n*i + k],2)*pow(dbar[k],2);
-      aPPb += a[k]*b[k]*pow(dbar[k],2);
-    }
-    return(aPPb + aPw*bPw*wPPw/pow(wPw,2) - aPw*bPPw/wPw - bPw*aPPw/wPw);
+    aPw = ddot3(n, a, dbar, w + n*i);
+    bPw = ddot3(n, b, dbar, w + n*i);
+    wPw = ddot3(n, w + n*i, dbar, w + n*i);
+    return(ddot4(n,a,dbar,dbar,b) + aPw*bPw*ddot4(n,w + n*i,dbar,dbar,w + n*i)/pow(wPw,2) -
+           aPw*ddot4(n,b,dbar,dbar,w + n*i)/wPw - bPw*ddot4(n,a,dbar,dbar,w + n*i)/wPw);
 
   }else{
-    return(
-      atPiPib(i-1,n,a,b,w,dbar) +
-      atPib(i-1,n,a,w+n*i,w,dbar)*atPib(i-1,n,b,w+n*i,w,dbar)*atPiPib(i-1,n,w+n*i,w+n*i,w,dbar)/pow(atPib(i-1,n,w+n*i,w+n*i,w,dbar),2) -
-      atPib(i-1,n,a,w+n*i,w,dbar)*atPiPib(i-1,n,b,w+n*i,w,dbar)/atPib(i-1,n,w+n*i,w+n*i,w,dbar) -
-      atPib(i-1,n,b,w+n*i,w,dbar)*atPiPib(i-1,n,a,w+n*i,w,dbar)/atPib(i-1,n,w+n*i,w+n*i,w,dbar)
-    );
+    aPw = atPb(i-1,n,a,w+n*i,w,dbar);
+    bPw = atPb(i-1,n,b,w+n*i,w,dbar);
+    wPw = atPb(i-1,n,w+n*i,w+n*i,w,dbar);
+    return(atPPb(i-1,n,a,b,w,dbar) + aPw*bPw*atPPb(i-1,n,w+n*i,w+n*i,w,dbar)/pow(wPw,2) -
+           aPw*atPPb(i-1,n,b,w+n*i,w,dbar)/wPw - bPw*atPPb(i-1,n,a,w+n*i,w,dbar)/wPw);
   }
 }
 
 //==========================================
 
-double atPiPiPib(int i, int n, double *a, double *b, double *w, double *dbar){
+double atPPPb(int i, int n, double *a, double *b, double *w, double *dbar){
+  double aPw, bPw, wPw, aPPw, bPPw, wPPw;
   if(i == 0){
-    int k;
-    double aPw=0, bPw=0, wPw=0, aPPw=0, bPPw=0, wPPw=0;
-    double aPPPb=0, aPPPw=0, bPPPw=0, wPPPw=0;
-    for(k=0; k<n; k++){
-      aPw += a[k]*w[n*i + k]*dbar[k];
-      bPw += b[k]*w[n*i + k]*dbar[k];
-      wPw += pow(w[n*i + k],2)*dbar[k];
-      aPPw += a[k]*w[n*i + k]*pow(dbar[k],2);
-      bPPw += b[k]*w[n*i + k]*pow(dbar[k],2);
-      aPPPw += a[k]*w[n*i + k]*pow(dbar[k],3);
-      bPPPw += b[k]*w[n*i + k]*pow(dbar[k],3);
-      wPPw += pow(w[n*i + k],2)*pow(dbar[k],2);
-      wPPPw += pow(w[n*i + k],2)*pow(dbar[k],3);
-      aPPPb += a[k]*b[k]*pow(dbar[k],3);
-    }
-    return(aPPPb - aPw*bPw*pow(wPPw,2)/pow(wPw,3) - aPw*bPPPw/wPw -
-      bPw*aPPPw/wPw - aPPw*bPPw/wPw + aPw*bPPw*wPPw/pow(wPw,2) +
-      bPw*aPPw*wPPw/pow(wPw,2) + aPw*bPw*wPPPw/pow(wPw,2)
-    );
+    aPw = ddot3(n, a, dbar, w + n*i);
+    bPw = ddot3(n, b, dbar, w + n*i);
+    wPw = ddot3(n, w + n*i, dbar, w + n*i);
+    aPPw = ddot4(n, a, dbar, dbar, w + n*i);
+    bPPw = ddot4(n, b, dbar, dbar, w + n*i);
+    wPPw = ddot4(n, w + n*i, dbar, dbar, w + n*i);
+    return(ddot5(n,a,dbar,dbar,dbar,b) - aPw*bPw*pow(wPPw,2)/pow(wPw,3) -
+           aPw*ddot5(n,b,dbar,dbar,dbar,w + n*i)/wPw - bPw*ddot5(n,a,dbar,dbar,dbar,w + n*i)/wPw -
+           aPPw*bPPw/wPw + aPw*bPPw*wPPw/pow(wPw,2) + bPw*aPPw*wPPw/pow(wPw,2) +
+           aPw*bPw*ddot5(n,w + n*i,dbar,dbar,dbar,w + n*i)/pow(wPw,2)
+          );
 
   }else{
-    return(
-      atPiPiPib(i-1,n,a,b,w,dbar) -
-      atPib(i-1,n,a,w+n*i,w,dbar)*atPib(i-1,n,b,w+n*i,w,dbar)*pow(atPiPib(i-1,n,w+n*i,w+n*i,w,dbar),2)/pow(atPib(i-1,n,w+n*i,w+n*i,w,dbar),3) -
-      atPib(i-1,n,a,w+n*i,w,dbar)*atPiPiPib(i-1,n,b,w+n*i,w,dbar)/atPib(i-1,n,w+n*i,w+n*i,w,dbar) -
-      atPib(i-1,n,b,w+n*i,w,dbar)*atPiPiPib(i-1,n,a,w+n*i,w,dbar)/atPib(i-1,n,w+n*i,w+n*i,w,dbar) -
-      atPiPib(i-1,n,a,w+n*i,w,dbar)*atPiPib(i-1,n,b,w+n*i,w,dbar)/atPib(i-1,n,w+n*i,w+n*i,w,dbar) +
-      atPib(i-1,n,a,w+n*i,w,dbar)*atPiPib(i-1,n,b,w+n*i,w,dbar)*atPiPib(i-1,n,w+n*i,w+n*i,w,dbar)/pow(atPib(i-1,n,w+n*i,w+n*i,w,dbar),2) +
-      atPib(i-1,n,b,w+n*i,w,dbar)*atPiPib(i-1,n,a,w+n*i,w,dbar)*atPiPib(i-1,n,w+n*i,w+n*i,w,dbar)/pow(atPib(i-1,n,w+n*i,w+n*i,w,dbar),2) +
-      atPib(i-1,n,a,w+n*i,w,dbar)*atPib(i-1,n,b,w+n*i,w,dbar)*atPiPiPib(i-1,n,w+n*i,w+n*i,w,dbar)/pow(atPib(i-1,n,w+n*i,w+n*i,w,dbar),2)
-    );
+    aPw = atPb(i-1,n,a,w+n*i,w,dbar);
+    bPw = atPb(i-1,n,b,w+n*i,w,dbar);
+    wPw = atPb(i-1,n,w+n*i,w+n*i,w,dbar);
+    aPPw = atPPb(i-1,n,a,w+n*i,w,dbar);
+    bPPw = atPPb(i-1,n,b,w+n*i,w,dbar);
+    wPPw = atPPb(i-1,n,w+n*i,w+n*i,w,dbar);
+    return(atPPPb(i-1,n,a,b,w,dbar) - aPw*bPw*pow(wPPw,2)/pow(wPw,3) -
+           aPw*atPPPb(i-1,n,b,w+n*i,w,dbar)/wPw - bPw*atPPPb(i-1,n,a,w+n*i,w,dbar)/wPw -
+           aPPw*bPPw/wPw + aPw*bPPw*wPPw/pow(wPw,2) + bPw*aPPw*wPPw/pow(wPw,2) +
+           aPw*bPw*atPPPb(i-1,n,w+n*i,w+n*i,w,dbar)/pow(wPw,2)
+          );
   }
 }
 
 //==========================================
 
-double tr_Pi(int i, int n, double *w, double *dbar){
+double tr_P(int i, int n, double *w, double *dbar){
   if(i == 0){  //  Tr_P0 - wtP0P0w/wP0w
-    int k;
-    double sumd=0, wPw=0, wPPw=0;
-    for(k=0; k<n; k++){
-      sumd += dbar[k];
-      wPw += pow(w[n*i + k],2)*dbar[k];
-      wPPw += pow(w[n*i + k],2)*pow(dbar[k],2);
-    }
-    return(sumd - wPPw/wPw);
+    return(dsum(n,dbar) - ddot4(n,w + n*i,dbar,dbar,w + n*i)/ddot3(n,w + n*i,dbar,w + n*i));
+
   }else{
-    return(
-     tr_Pi(i-1,n,w,dbar) -
-     atPiPib(i-1,n,w+n*i,w+n*i,w,dbar)/atPib(i-1,n,w+n*i,w+n*i,w,dbar)
-   );
+    return(tr_P(i-1,n,w,dbar) - atPPb(i-1,n,w+n*i,w+n*i,w,dbar)/atPb(i-1,n,w+n*i,w+n*i,w,dbar));
   }
 }
 
 //==========================================
 
-double tr_PiPi(int i, int n, double *w, double *dbar){
+double tr_PP(int i, int n, double *w, double *dbar){
+  double wPw;
   if(i == 0){
-    int k;
-    double sumdd=0, wPw=0, wPPw=0, wPPPw=0;
-    for(k=0; k<n; k++){
-      sumdd += pow(dbar[k],2);
-      wPw += pow(w[n*i + k],2)*dbar[k];
-      wPPw += pow(w[n*i + k],2)*pow(dbar[k],2);
-      wPPPw += pow(w[n*i + k],2)*pow(dbar[k],3);
-    }
-    return(sumdd + pow(wPPw,2)/pow(wPw,2) - 2*wPPPw/wPw);
+    int inc1 = 1;
+    wPw = ddot3(n, w + n*i, dbar, w + n*i);
+    return(F77_NAME(ddot)(&n, dbar, &inc1, dbar, &inc1) +
+           pow(ddot4(n,w + n*i,dbar,dbar,w + n*i),2)/pow(wPw,2) -
+           2*ddot5(n,w + n*i,dbar,dbar,dbar,w + n*i)/wPw);
+
   }else{
-    return(
-      tr_PiPi(i-1,n,w,dbar) +
-      pow(atPiPib(i-1,n,w+n*i,w+n*i,w,dbar),2)/pow(atPib(i-1,n,w+n*i,w+n*i,w,dbar),2) -
-      2*atPiPiPib(i-1,n,w+n*i,w+n*i,w,dbar)/atPib(i-1,n,w+n*i,w+n*i,w,dbar)
-    );
+    wPw = atPb(i-1,n,w+n*i,w+n*i,w,dbar);
+    return(tr_PP(i-1,n,w,dbar) +
+           pow(atPPb(i-1,n,w+n*i,w+n*i,w,dbar),2)/pow(wPw,2) -
+           2*atPPPb(i-1,n,w+n*i,w+n*i,w,dbar)/wPw
+          );
   }
 }
 
@@ -144,15 +102,11 @@ double tr_PiPi(int i, int n, double *w, double *dbar){
 
 double det_WtHinvW(int i, int n, double *w, double *dbar){
   // Obtained from Leibniz formula
-  if(i == 0){  // det(W0'H^{-1}W0)*w1'P0w1 = w1'H^{-1}w1
-    int k;
-    double wPw=0;
-    for(k=0; k<n; k++){
-      wPw += pow(w[n*i + k],2)*dbar[k];
-    }
-    return(wPw);
+  if(i == 0){  // det(W0'H^{-1}W0)*w1'P0w1 = w1'H^{-1}w1 = wPw
+    return(ddot3(n, w + n*i, dbar, w + n*i)); // wPw
+
   }else{
-    return(det_WtHinvW(i-1,n,w,dbar)*atPib(i-1,n,w+n*i,w+n*i,w,dbar));
+    return(det_WtHinvW(i-1,n,w,dbar)*atPb(i-1,n,w+n*i,w+n*i,w,dbar));
   }
 }
 
@@ -163,18 +117,15 @@ double logLik(double ratio, int n, int p, double *Uty, double *UtX,
               double *d, double pi, double *dbar)
 {
   int k;
-  double logdetH=0;   // log(det(H)) = log(prod(ratio*d+1))
+  double logdetH = 0;   // log(det(H)) = log(prod(ratio*d+1))
 
   for(k=0; k<n; k++){
     dbar[k] = 1/(ratio*d[k] + 1);
     logdetH += log(ratio*d[k] + 1);
   }
 
-  double ytPy=atPib(p-1, n, Uty, Uty, UtX, dbar);  // t(y)%*%Px%*%y
-
-  // Remove the factor 0.5
-  // 0.5*n*log(0.5*n/pi) - 0.5*n - 0.5*logdetH - 0.5*n*log(ytPy)
-  return(n*log(0.5*n/pi) - n - logdetH - n*log(ytPy));
+  // Remove the factor 0.5: 0.5*n*log(0.5*n/pi) - 0.5*n - 0.5*logdetH - 0.5*n*log(ytPy)
+  return(n*log(0.5*n/pi) - n - logdetH - n*log(atPb(p-1,n,Uty,Uty,UtX,dbar)));
 }
 
 //====================================================================
@@ -186,19 +137,17 @@ double logResLik(double ratio, int n, int p, double *Uty, double *UtX,
                  double *d, double pi, double *dbar)
 {
   int k;
-  double logdetH=0;   // log(det(H)) = log(prod(ratio*d+1))
+  double logdetH = 0;   // log(det(H)) = log(prod(ratio*d+1))
 
   for(k=0; k<n; k++){
     dbar[k] = 1/(ratio*d[k] + 1);
     logdetH += log(ratio*d[k] + 1);
   }
 
-  double detWtHinvW = det_WtHinvW(p-1, n, UtX, dbar);
-  double ytPy = atPib(p-1, n, Uty, Uty, UtX, dbar);
-
   // Remove the factor 0.5 and the term +log(detXtX)
   return((n-p)*log(0.5*(n-p)/pi) - (n-p) -
-        logdetH - log(detWtHinvW) - (n-p)*log(ytPy));
+        logdetH - log(det_WtHinvW(p-1,n,UtX,dbar)) -
+        (n-p)*log(atPb(p-1,n,Uty,Uty,UtX,dbar)));
 }
 
 //====================================================================
@@ -208,17 +157,13 @@ double dlogLik(double ratio, int n, int p, double *Uty, double *UtX,
                double *d, double pi, double *dbar)
 {
   int k;
-  double sumd = 0; // sum(dbar)
-
   for(k=0; k<n; k++){
     dbar[k] = 1/(ratio*d[k] + 1);
-    sumd += dbar[k];
   }
 
-  double Tr_HinvG = (n-sumd)/ratio;  // sum(diag(Hinv%*%G))
-  double ytPy = atPib(p-1, n, Uty, Uty, UtX, dbar);
-  double ytPPy = atPiPib(p-1, n, Uty, Uty, UtX, dbar);
-  double ytPGPy = (ytPy-ytPPy)/ratio;   // t(y)%*%Px%*%G%*%Px%*%y
+  double Tr_HinvG = (n - dsum(n,dbar))/ratio;  // sum(diag(Hinv%*%G)) = (n-sumd)/ratio
+  double ytPy = atPb(p-1, n, Uty, Uty, UtX, dbar);
+  double ytPGPy = (ytPy - atPPb(p-1,n,Uty,Uty,UtX,dbar))/ratio;   // y'Px G Px y = (ytPy-ytPPy)/ratio
 
   // Remove the factor 0.5: -0.5*Tr_HinvG+0.5*n*ytPGPy/ytPy
   return(-Tr_HinvG + n*ytPGPy/ytPy);
@@ -236,10 +181,9 @@ double dlogResLik(double ratio, int n, int p, double *Uty, double *UtX,
     dbar[k] = 1/(ratio*d[k] + 1);
   }
 
-  double Tr_PG = (n-p-tr_Pi(p-1, n, UtX, dbar))/ratio;  // sum(diag(Px%*%G))
-  double ytPy = atPib(p-1, n, Uty, Uty, UtX, dbar);  // t(y)%*%Px%*%y
-  double ytPPy = atPiPib(p-1, n, Uty, Uty, UtX, dbar);  // t(y)%*%Px%*%Px%*%y
-  double ytPGPy = (ytPy-ytPPy)/ratio;  // t(y)%*%Px%*%G%*%Px%*%y
+  double Tr_PG = (n-p-tr_P(p-1,n,UtX,dbar))/ratio;  // sum(diag(Px%*%G))
+  double ytPy = atPb(p-1, n, Uty, Uty, UtX, dbar);  // t(y)%*%Px%*%y
+  double ytPGPy = (ytPy - atPPb(p-1,n,Uty,Uty,UtX,dbar))/ratio;  // y' Px G Px y = (ytPy-ytPPy)/ratio
 
   // Remove the factor 0.5: -0.5*Tr_PG+0.5*(n-p)*ytPGPy/ytPy
   return(-Tr_PG + (n-p)*ytPGPy/ytPy);
@@ -381,23 +325,23 @@ SEXP R_solve_mixed(SEXP N_, SEXP ratio_, SEXP trn_, SEXP ytrn_,
     double *ytrn, *X, *d, *U, *work, *dbar, *tmp1, *tmp2, *tmp3;
     double *Uty, *UtX, *yHat;
     double *bounds;
-    double one=1;
-    int inc1=1;
+    double one = 1;
+    int inc1 = 1;
     int intval;
     SEXP list, uHat_, yHat_, bHat_;
-    int nprotect=8;
+    int nprotect = 8;
 
     double tol=NUMERIC_VALUE(tol_);
     double dmin=NUMERIC_VALUE(dmin_);
     int maxiter=INTEGER_VALUE(maxiter_);
     int N=INTEGER_VALUE(N_);
-    int ntrn=XLENGTH(trn_);
-    int p=ncols(X_);
+    int ntrn=Rf_length(trn_);
+    int p=Rf_ncols(X_);
     int isREML=asLogical(isREML_);
     int isEigen=asLogical(isEigen_);
     int BLUE=asLogical(BLUE_);
     int BLUP=asLogical(BLUP_);
-    int nintervals=XLENGTH(bounds_)-1;
+    int nintervals=Rf_length(bounds_)-1;
 
     PROTECT(trn_=AS_INTEGER(trn_));
     trn=INTEGER_POINTER(trn_);
@@ -425,11 +369,11 @@ SEXP R_solve_mixed(SEXP N_, SEXP ratio_, SEXP trn_, SEXP ytrn_,
     int error = NA_INTEGER;
     double pi = M_PI, eps = DBL_EPSILON;
 
-    Uty=(double *) R_alloc(ntrn, sizeof(double));
-    UtX=(double *) R_alloc(ntrn*p, sizeof(double));
+    Uty = (double *) R_alloc(ntrn, sizeof(double));
+    UtX = (double *) R_alloc(ntrn*p, sizeof(double));
 
     yHat_ = PROTECT(Rf_allocVector(REALSXP, N));
-    yHat=NUMERIC_POINTER(yHat_);
+    yHat = NUMERIC_POINTER(yHat_);
 
     // Check for small eigenvalues
     ndsmall=0;
@@ -545,7 +489,7 @@ SEXP R_solve_mixed(SEXP N_, SEXP ratio_, SEXP trn_, SEXP ytrn_,
       double *bHat;
 
       bHat_ = PROTECT(Rf_allocVector(REALSXP, p));
-      bHat=NUMERIC_POINTER(bHat_);
+      bHat = NUMERIC_POINTER(bHat_);
       nprotect++;
 
       crossproduct(ntrn,1,p,tmp1,UtX,tmp2);   // tmp2=t(Uty*dbar)%*%UtX
@@ -562,28 +506,28 @@ SEXP R_solve_mixed(SEXP N_, SEXP ratio_, SEXP trn_, SEXP ytrn_,
       memset(yHat, 0, N*sizeof(double));
     }
 
-    varE = atPib(p-1,ntrn,Uty,Uty,UtX,dbar)/(isREML ? ntrn-p : ntrn);
+    varE = atPb(p-1,ntrn,Uty,Uty,UtX,dbar)/(isREML ? ntrn-p : ntrn);
     varU = ratio*varE;
     h2 = varU/(varU + varE);
 
     if(BLUP){
       double *Z, *K, *M, *uHat;
-      int nu = Rf_isNull(Z_) ? N : ncols(Z_);
+      int nu = Rf_isNull(Z_) ? N : Rf_ncols(Z_);
 
       uHat_ = PROTECT(Rf_allocVector(REALSXP, nu));
-      uHat=NUMERIC_POINTER(uHat_);
+      uHat = NUMERIC_POINTER(uHat_);
       nprotect++;
 
       M = (double *) R_alloc(N*(ntrn>nu ? ntrn : nu), sizeof(double));
 
       if(!Rf_isNull(Z_)){
         PROTECT(Z_=AS_NUMERIC(Z_));
-        Z=NUMERIC_POINTER(Z_);
+        Z = NUMERIC_POINTER(Z_);
         nprotect++;
       }
       if(!Rf_isNull(K_)){
         PROTECT(K_=AS_NUMERIC(K_));
-        K=NUMERIC_POINTER(K_);
+        K = NUMERIC_POINTER(K_);
         nprotect++;
       }
 

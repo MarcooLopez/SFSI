@@ -3,16 +3,11 @@
 
 cov2dist <- function(A, a = 1, inplace = FALSE)
 {
-   tmp <- info_matrix(A, check=TRUE)
-   if(tmp$nrows != tmp$ncols){
-     stop("Input 'A' must be squared matrix")
+   dm <- dim(A)
+   if((sum(dm)/2)^2 != length(A)){
+      stop("Input 'A' must be a squared symmetric matrix")
    }
-   n <- tmp$nrows
-   type <- tmp$type
-   diag <- tmp$diag
-   byrow <- tmp$byrow
-
-   type <- ifelse(type=="full",0L,ifelse(type=="upper",1L,2L))
+   n <- dm[1]
 
    #isBigMatrix <- bigmemory::is.big.matrix(A)
    isBigMatrix <- FALSE
@@ -24,11 +19,11 @@ cov2dist <- function(A, a = 1, inplace = FALSE)
    }else{
      #dyn.load("c_cov2dist.so")
      if(inplace){
-       tmp <- .Call('R_cov2dist', n, a, A, type, byrow)
+       tmp <- .Call('R_cov2dist', n, a, A)
        #return(tmp)
      }else{
        out <- A[]
-       tmp <- .Call('R_cov2dist', n, a, out, type, byrow)
+       tmp <- .Call('R_cov2dist', n, a, out)
        return(out)
      }
      #dyn.unload("c_cov2dist.so")

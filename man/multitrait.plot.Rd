@@ -43,7 +43,7 @@ Visualizing results from an object of the class 'SSI'
   trn_tst[,1] = ifelse(Y$trial \%in\% 2, 0, 1)
   trn_tst[,2] = ifelse(Y$trial \%in\% 2, 0, 1)
   \donttest{
-  fm = SSI(y, K=G, trn_tst=trn_tst, alpha=1, mc.cores=1)
+  fm = SSI(y, K=G, trn_tst=trn_tst, mc.cores=1)
   multitrait.plot(fm)
   }
 }

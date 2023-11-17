@@ -30,61 +30,29 @@ fitBLUP <- function(y, X = NULL, Z = NULL, K = NULL, U = NULL,
       message(" ",length(trn_list)," different training sets were found for the response variable.")
       message(" Eigenvalue decomposition is applied to each common training set")
     }
-    #message(" This process can be time-consuming for large sample size")
   }
 
-  BLUE <- TRUE
-  if(is.null(X)){ # Design matrix for fixed effects (including an intercept)
-    X <- stats::model.matrix(~1,data=data.frame(rep(1,n)))
-    if(!intercept){
-      if(verbose){
-        message(" No intercept is estimated. Response is assumed to have mean zero")
-      }
-      BLUE <- FALSE
-    }
-  }else{
-    if(length(dim(X))==2L){
-      X <- as.matrix(X)
-    }else{
-      X <- stats::model.matrix(~X)
-      if(ncol(X)>2)  colnames(X)[-1] <- substr(colnames(X)[-1],2,nchar(colnames(X)[-1]))
-    }
+  BLUE <- ifelse(is.null(X) & !intercept, FALSE, TRUE)
+  if(verbose & !BLUE){
+    message(" No intercept is estimated. Response is assumed to have mean zero")
   }
-  stopifnot(n.regions > 0)
-  stopifnot(nrow(X) == n)
+  X <- setX(n=n, X=X)
   p <- ncol(X)
-  isREML <- (method=="REML")
 
   isEigen <- FALSE
   if(is.null(U) | is.null(d))
   {
-    G <- U <- d <- NULL
-    if(is.null(Z) & is.null(K)){
-      ratio <- 0   # Only GLS (only fixed effects)
-
-    }else{
-      if(is.null(Z)){  # Case G=K
-        if(length(dim(K)) != 2L) stop("Object 'K' must be a matrix")
-
-      }else{
-        if(length(dim(Z)) != 2L) stop("Object 'Z' must be a matrix")
-        stopifnot(nrow(Z) == n)
-
-        if(is.null(K)){
-          G <- tcrossprod(Z)  # G = ZKZ' = ZZ' with K=I
-        }else{
-          G <- tcrossprod(Z,tcrossprod(Z,K))  # G = ZKZ'
-        }
-      }
-    }
+    G <- setK(n=n, Z=Z, K=K)
 
   }else{
     isEigen <- TRUE
     G <- K <- Z <- NULL
+    stopifnot(ncol(U) == length(d))
     tmp <- unlist(lapply(trn_list,function(x)length(x$trn)))
     if(any(tmp != n)){
        stop("No 'NA' values are allowed when parameters 'U' and 'd' are provided")
     }
+    EVD <- list(values=d, vectors=U)
   }
 
   # If varE and varU are provided
@@ -100,6 +68,9 @@ fitBLUP <- function(y, X = NULL, Z = NULL, K = NULL, U = NULL,
     }
   }
 
+  stopifnot(n.regions > 0)
+  isREML <- (method=="REML")
+
   bounds <- exp(seq(log(interval[1]), log(interval[2]), length=n.regions+1))
 
   out <- vector("list", q)
@@ -107,7 +78,7 @@ fitBLUP <- function(y, X = NULL, Z = NULL, K = NULL, U = NULL,
 
   # Perform the analysis for all traits
   if(verbose & q>1L){
-    pb = utils::txtProgressBar(style=3)
+    pb <- utils::txtProgressBar(style=3)
   }
   for(tr in 1:length(trn_list))
   {
@@ -116,25 +87,16 @@ fitBLUP <- function(y, X = NULL, Z = NULL, K = NULL, U = NULL,
 
     if(!isEigen){
       if(is.null(Z) & is.null(K)){
-        # SVD of a diagonal matrix
-        d <- rep(1, nTRN)
-        U <- matrix(0, ncol=nTRN, nrow=nTRN)
+        # EVD of a diagonal matrix
+        EVD <- list(values=rep(1, nTRN), vectors=matrix(0, ncol=nTRN, nrow=nTRN))
         for(i in 1:nTRN){
-          U[i,nTRN-i+1] <- 1
+          EVD$vectors[i,nTRN-i+1] <- 1
         }
 
       }else{
-        if(is.null(Z)){
-          tmp <- eigen(K[trn,trn], symmetric=TRUE)
-        }else{
-          tmp <- eigen(G[trn,trn], symmetric=TRUE)
-        }
-        d <- tmp$values
-        U <- tmp$vectors
-        rm(tmp)
+        EVD <- eigen(G[trn,trn], symmetric=TRUE)
       }
     }
-    stopifnot(ncol(U) == length(d))
 
     iy <- trn_list[[tr]]$iy  # columns of y with a common trn set
 
@@ -149,8 +111,8 @@ fitBLUP <- function(y, X = NULL, Z = NULL, K = NULL, U = NULL,
 
       #dyn.load("c_blup.so")
       res <- .Call('R_solve_mixed', n, ratio0, trn-1, ytrn, X, Z, K,
-                    U, d, bounds, tol, maxiter, dmin, isREML,
-                    isEigen, BLUE, BLUP)
+                    EVD$vectors, EVD$values, bounds, tol, maxiter,
+                    dmin, isREML, isEigen, BLUE, BLUP)
       #dyn.unload("c_blup.so")
 
       bHat0 <- res[[10]]

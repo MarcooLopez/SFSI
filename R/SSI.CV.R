@@ -123,9 +123,9 @@ SSI.CV <- function(y, X = NULL, b = NULL, Z = NULL, K,
     }
 
     if(mc.cores > 1L & isLOOCV){
-      out = parallel::mclapply(X=seq(nfolds),FUN=compApply,mc.cores=mc.cores)
+      out <- parallel::mclapply(X=seq(nfolds),FUN=compApply,mc.cores=mc.cores)
     }else{
-      out = lapply(X=seq(nfolds),FUN=compApply)
+      out <- lapply(X=seq(nfolds),FUN=compApply)
     }
 
     tmp <- do.call(rbind,split(data.frame(trn,folds),folds))[,1]

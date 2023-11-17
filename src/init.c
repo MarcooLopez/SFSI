@@ -13,37 +13,23 @@
 */
 
 /* .Call calls */
-extern SEXP R_cov2cor(SEXP, SEXP, SEXP, SEXP, SEXP);
-extern SEXP R_cov2dist(SEXP, SEXP, SEXP, SEXP, SEXP);
-extern SEXP R_kronecker(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP R_cov2cor(SEXP, SEXP, SEXP);
+extern SEXP R_cov2dist(SEXP, SEXP, SEXP);
 extern SEXP R_lars(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-extern SEXP R_lower_tri(SEXP, SEXP, SEXP, SEXP);
-extern SEXP R_penalize_cov(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-extern SEXP R_penalize_cov_kronecker(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP R_prune(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP R_readBinFile(SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP R_solve_mixed(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-extern SEXP R_subset_tri(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-extern SEXP R_unpack_tri(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-extern SEXP R_updatebeta(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-extern SEXP R_upper_tri(SEXP, SEXP, SEXP, SEXP);
+extern SEXP R_updatebeta(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP R_writeBinFile(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 
 static const R_CallMethodDef CallEntries[] = {
-    {"R_cov2cor",                (DL_FUNC) &R_cov2cor,                 5},
-    {"R_cov2dist",               (DL_FUNC) &R_cov2dist,                5},
-    {"R_kronecker",              (DL_FUNC) &R_kronecker,              17},
+    {"R_cov2cor",                (DL_FUNC) &R_cov2cor,                 3},
+    {"R_cov2dist",               (DL_FUNC) &R_cov2dist,                3},
     {"R_lars",                   (DL_FUNC) &R_lars,                   10},
-    {"R_lower_tri",              (DL_FUNC) &R_lower_tri,               4},
-    {"R_penalize_cov",           (DL_FUNC) &R_penalize_cov,           14},
-    {"R_penalize_cov_kronecker", (DL_FUNC) &R_penalize_cov_kronecker, 11},
     {"R_prune",                  (DL_FUNC) &R_prune,                   7},
     {"R_readBinFile",            (DL_FUNC) &R_readBinFile,             5},
     {"R_solve_mixed",            (DL_FUNC) &R_solve_mixed,            17},
-    {"R_subset_tri",             (DL_FUNC) &R_subset_tri,              6},
-    {"R_unpack_tri",             (DL_FUNC) &R_unpack_tri,              8},
-    {"R_updatebeta",             (DL_FUNC) &R_updatebeta,             12},
-    {"R_upper_tri",              (DL_FUNC) &R_upper_tri,               4},
+    {"R_updatebeta",             (DL_FUNC) &R_updatebeta,             13},
     {"R_writeBinFile",           (DL_FUNC) &R_writeBinFile,            6},
     {NULL, NULL, 0}
 };

@@ -21,9 +21,7 @@ fitBLUP(y, X = NULL, Z = NULL, K = NULL,
 
 \item{K}{(numeric matrix) Kinship relationship matrix}
 
-\item{U}{(numeric matrix) Eigenvectors from spectral value decomposition of \ifelse{html}{\out{<b>G</b> = <b>U D U'</b>}}{\eqn{\textbf{G} = \textbf{U D U'}}{G = U D U'}}}
-
-\item{d}{(numeric vector) Eigenvalues from spectral value decomposition of \ifelse{html}{\out{<b>G</b> = <b>U D U'</b>}}{\eqn{\textbf{G} = \textbf{U D U'}}{G = U D U'}}}
+\item{U, d}{(numeric matrix/vector) Eigenvectors and eigenvalues from eigen value decomposition of \ifelse{html}{\out{<b>G</b> = <b>U D U'</b>}}{\eqn{\textbf{G} = \textbf{U D U'}}{G = U D U'}}}
 
 \item{varU, varE}{(numeric) Genetic and residual variances. When both \code{varU} and \code{varE} are not \code{NULL} they are not calculated; otherwise, the likelihood function (REML or ML) is optimized to search for the genetic/residual variances ratio}
 

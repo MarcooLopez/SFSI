@@ -168,25 +168,20 @@ Function 'SSI.CV' performs cross-validation within the training data specified i
   
   # Sets (testing=0, training=1)
   trn_tst = ifelse(Y$trial \%in\% 1:2, 0, 1)
-
-  # Calculate variance components ratio using training data
-  yNA = y
-  yNA[trn_tst==0] = NA
-  fm0 = fitBLUP(yNA,K=G)
-  varU = fm0$varU
-  varE = fm0$varE
-  h2 = fm0$varU/(fm0$varU + fm0$varE)
-  b = fm0$b       # intercept
   
   # Sparse selection index
-  fm1 = SSI(y,K=G,varU=varU,varE=varE,b=b,trn_tst=trn_tst)
+  # Fixed effects b and variances varU and varE are 
+  # computed internally from training data
+  fm1 = SSI(y,K=G,trn_tst=trn_tst)
   summary(fm1)$optCOR
-
+  varU = fm1$varU
+  varE = fm1$varE
+  b = fm1$b
+  \donttest{
   #---------------------------------------------------
   # Predicting a testing set using a value of lambda
   # obtained from cross-validation in a traning set
   #---------------------------------------------------
-  \donttest{
   # Run a cross validation in training set
   fm2 = SSI.CV(y,K=G,varU=varU,varE=varE,b=b,trn_tst=trn_tst,nfolds=5,name="1 5CV")
   lambda = summary(fm2)$optCOR["lambda"]
@@ -196,11 +191,24 @@ Function 'SSI.CV' performs cross-validation within the training data specified i
   summary(fm3)$accuracy        # Testing set accuracy
 
   # Compare the accuracy with that of the non-sparse index (G-BLUP)
-  cor(fm0$u[trn_tst==0],y[trn_tst==0])
+  summary(fm1)$accuracy[fm1$nlambda,1] # we take the last one
   
   # Obtain an 'optimal' lambda by repeating the CV several times
   fm22 = SSI.CV(y,K=G,varU=varU,varE=varE,b=b,trn_tst=trn_tst,nCV=5,name="5 5CV")
   plot(fm22,fm2)
+  
+  #---------------------------------------------------
+  # Multi-trait SSI
+  #---------------------------------------------------
+  y = scale(Y[,4:6])    # Response variable
+  
+  # Sets (testing=0, training=1)
+  trn_tst = matrix(NA,ncol=ncol(y),nrow=nrow(y))
+  trn_tst[,1] = ifelse(Y$trial \%in\% 1:2, 0, 1)
+  trn_tst[,2] = ifelse(Y$trial \%in\% 1, 0, 1)
+  trn_tst[,3] = ifelse(Y$trial \%in\% 2, 0, 1)
+  
+  fm = SSI(y, K=G, trn_tst=trn_tst, mc.cores=1)
   }
 }
 \references{

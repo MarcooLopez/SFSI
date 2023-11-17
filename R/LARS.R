@@ -1,7 +1,7 @@
 
 LARS <- function(Sigma, Gamma, method=c("LAR","LASSO"),
                  nsup.max = NULL, eps = .Machine$double.eps*100,
-                 scale = TRUE, mc.cores = 1L, save.at = NULL,
+                 scale = TRUE, sdx = NULL, mc.cores = 1L, save.at = NULL,
                  precision.format = c("double","single"),
                  fileID = NULL, verbose = FALSE)
 {
@@ -13,23 +13,26 @@ LARS <- function(Sigma, Gamma, method=c("LAR","LASSO"),
   }else{
     Gamma <- matrix(Gamma, ncol=1L)
   }
-  dimnames(Sigma) <- NULL
   p <- nrow(Gamma)
   q <- ncol(Gamma)
 
   if((sum(dim(Sigma))/2)^2 != p^2){
-    stop("Object 'Sigma' must be a p*p squared matrix where p=nrow(Gamma)")
+    stop("Input 'Sigma' must be a p*p squared matrix where p=nrow(Gamma)")
   }
 
-  storage.mode(Sigma) <- "double"
-  storage.mode(Gamma) <- "double"
-
+  scaleb <- TRUE
   if(scale){
     sdx <-  sqrt(diag(Sigma))
     cov2cor2(Sigma, inplace=TRUE)     # Equal to Sigma=cov2cor(Sigma) but faster
     Gamma <- sweep(Gamma, 1L, sdx, FUN="/")
   }else{
-    sdx <- rep(1, p)
+    if(is.null(sdx)){
+      scaleb <- FALSE
+    }else{
+      if(length(sdx) != p){
+        stop("Input 'sdx' must be a numeric vector of length = ",p)
+      }
+    }
   }
 
   nsup.max <- ifelse(is.null(nsup.max), p, nsup.max)
@@ -51,7 +54,7 @@ LARS <- function(Sigma, Gamma, method=c("LAR","LASSO"),
 
     #dyn.load("c_lasso.so")
     res <- .Call("R_lars", Sigma, rhs, eps, nsup.max,
-                 scale, sdx, isLASSO, filename,
+                 scaleb, sdx, isLASSO, filename,
                  doubleprecision, verbose2)
     #dyn.unload("c_lasso.so")
 
@@ -84,13 +87,13 @@ LARS <- function(Sigma, Gamma, method=c("LAR","LASSO"),
 
   # Run the analysis for 1:ncol(Gamma)
   if(verbose & q>1L){
-     pb = utils::txtProgressBar(style=3)
+     pb <- utils::txtProgressBar(style=3)
      con <- tempfile(tmpdir=tmpdir0)
   }
   if(mc.cores == 1L){
-    out = lapply(X=seq(q),FUN=compApply)
+    out <- lapply(X=seq(q),FUN=compApply)
   }else{
-    out = parallel::mclapply(X=seq(q),FUN=compApply,mc.cores=mc.cores)
+    out <- parallel::mclapply(X=seq(q),FUN=compApply,mc.cores=mc.cores)
   }
   if(verbose & q>1L) {
     close(pb); unlink(con)

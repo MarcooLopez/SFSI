@@ -1,29 +1,20 @@
-#include <R.h>
-#include <stdio.h>
-#include <Rmath.h>
-#include <stdbool.h>
-#include <Rinternals.h>
-#include <Rdefines.h>
-#include <R_ext/Lapack.h>
 #include "SFSI.h"
-//#include "utils_all.c"
+//#include "utils.c"
 
 //====================================================================
 // Calculates the mean and standard deviation of xj (j=1,...p)
 //====================================================================
 void get_mean(int n, int p, double *X,
                 double *mx  // output: sum of xj
-              )
+             )
 {
   long long i;
-  int inc0=0, inc1=1;
+  int inc0 = 0, inc1 = 1;
   double *one=(double *) R_alloc(1, sizeof(double));
   one[0] = 1;
 
-  long long n0 = (long long)n;
-
   for(i=0; i<p; i++){
-    mx[i] = F77_NAME(ddot)(&n, X + n0*i, &inc1, one, &inc0)/(double)n;
+    mx[i] = F77_NAME(ddot)(&n, X + n*i, &inc1, one, &inc0)/(double)n;
   }
 }
 
@@ -33,25 +24,23 @@ void get_sd(int n, int p, double *X,
                 double factor, // either 1/n or 1/(n-1)
                 double *mx,    // input: mean of xj
                 double *sdx    // output: standard deviation of xj
-              )
+           )
 {
   long long i;
-  int inc1=1;
-
-  long long n0 = (long long)n;
+  int inc1 = 1;
 
   if(mx == NULL){
     //Rprintf(" No mean is provided, it will be assumed to be zero\n");
     // Euclidean norm DNRM2 := sqrt( x'*x )
     for(i=0; i<p; i++){
-      sdx[i] = sqrt(factor)*F77_NAME(dnrm2)(&n, X + n0*i, &inc1);
+      sdx[i] = sqrt(factor)*F77_NAME(dnrm2)(&n, X + n*i, &inc1);
     }
 
   }else{
     for(i=0; i<p; i++){
       sdx[i] = sqrt(factor)*sqrt(F77_NAME(ddot)(&n,
-                                   X + n0*i, &inc1,
-                                   X + n0*i, &inc1)-(double)n*pow(mx[i],2));
+                                   X + n*i, &inc1,
+                                   X + n*i, &inc1)-(double)n*pow(mx[i],2));
     }
   }
 }
@@ -66,17 +55,14 @@ void get_connection(int n, int p, double *X, bool *A,
 {
   long long i, j;
   int flag;
-  double one=1;
+  double one = 1;
   double *xty = (double *) R_alloc(p, sizeof(double));  // crossprod
-
-  long long n0 = (long long)n;
-  long long p0 = (long long)p;
 
   if(centered && scaled){
     for(j=0; j<p-1; j++){
       matrix_vector_product(n, p-j-1, &one,
-                            X + n0*(j+1),
-                            X + n0*j, 1,
+                            X + n*(j+1),
+                            X + n*j, 1,
                             xty, 1); // X[,j+1]'X[,j]
 
       for(i=j+1; i<p; i++){
@@ -84,8 +70,8 @@ void get_connection(int n, int p, double *X, bool *A,
         if(useD){
           flag = flag*(fabs(pos[i]-pos[j]) <= dmax);
         }
-        A[p0*j + i] = flag;
-        A[p0*i + j] = A[p0*j + i];
+        A[p*j + i] = flag;
+        A[p*i + j] = A[p*j + i];
       }
     }
 
@@ -103,8 +89,8 @@ void get_connection(int n, int p, double *X, bool *A,
 
     for(j=0; j<p-1; j++){
       matrix_vector_product(n, p-j-1, &one,
-                            X + n0*(j+1),
-                            X + n0*j, 1,
+                            X + n*(j+1),
+                            X + n*j, 1,
                             xty, 1);
 
       for(i=j+1; i<p; i++){
@@ -112,8 +98,8 @@ void get_connection(int n, int p, double *X, bool *A,
         if(useD){
           flag = flag*(fabs(pos[i]-pos[j]) <= dmax);
         }
-        A[p0*j + i] = flag;
-        A[p0*i + j] = A[p0*j + i];
+        A[p*j + i] = flag;
+        A[p*i + j] = A[p*j + i];
       }
     }
   }
@@ -143,8 +129,6 @@ SEXP R_prune(SEXP X_,
     int centered=asLogical(centered_);
     int scaled=asLogical(scaled_);
     int verbose=asLogical(verbose_);
-
-    long long p0 = (long long)p;
 
     PROTECT(X_=AS_NUMERIC(X_));
     double *X=NUMERIC_POINTER(X_);
@@ -182,13 +166,13 @@ SEXP R_prune(SEXP X_,
     for(j=0; j<p; j++){
       remain[j] = j;
       connection[j] = 0;
-      A[p0*j + j] = true; // Connection with itself
+      A[p*j + j] = true; // Connection with itself
     }
 
     // Get connections summing by column across rows
     for(j=0; j<p; j++){
       for(i=0; i<p; i++){
-        if(A[p0*j + i]){ connection[j]++; }
+        if(A[p*j + i]){ connection[j]++; }
       }
 
       if(connection[j]==1){  // Subjects with no initial connections
@@ -222,7 +206,7 @@ SEXP R_prune(SEXP X_,
           // Check the connections with the selected one to drop
           ndrop=0;
           for(j=0; j<nrem; j++){
-            if(A[p0*(long long)remain[keep] + (long long)remain[j]]){
+            if(A[p*(long long)remain[keep] + (long long)remain[j]]){
                drop[ndrop++] = j;
                if(j != keep){
                  selected = remain[j]+1;
@@ -244,7 +228,7 @@ SEXP R_prune(SEXP X_,
           nrem -= ndrop;
           for(i=0; i<ndrop; i++){
             for(j=0; j<nrem; j++){
-              if(A[p0*(long long)remain[drop[i]]+(long long)remain0[j]]){
+              if(A[p*(long long)remain[drop[i]]+(long long)remain0[j]]){
                 connection[j]--;
               }
             }

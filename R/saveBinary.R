@@ -2,8 +2,8 @@
 # Save a file as binary
 
 saveBinary <- function(X, file = paste0(tempdir(),"/file.bin"),
-                        precision.format = c("double","single"),
-                        verbose = TRUE)
+                       precision.format = c("double","single"),
+                       verbose = TRUE)
 {
   precision.format <- match.arg(precision.format)
 

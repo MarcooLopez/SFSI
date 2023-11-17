@@ -5,8 +5,8 @@
 \usage{
 solveEN(Sigma, Gamma, alpha = 1, lambda = NULL,
         nlambda = 100, lambda.min = .Machine$double.eps^0.5,
-        lambda.max = NULL, common.lambda = TRUE,
-        nsup.max = NULL, scale = TRUE, tol = 1E-5,
+        lambda.max = NULL, common.lambda = TRUE, beta0 = NULL,
+        nsup.max = NULL, scale = TRUE, sdx = NULL, tol = 1E-5,
         maxiter = 1000, mc.cores = 1L, save.at = NULL,
         precision.format = c("double","single"),
         fileID = NULL, verbose = FALSE)
@@ -30,11 +30,15 @@ to a minimum equal to zero. If \code{alpha=0} the grid is generated starting fro
 
 \item{common.lambda}{\code{TRUE} or \code{FALSE} to whether computing the coefficients for a grid of lambdas common to all columns of \code{Gamma}
  or for a grid of lambdas specific to each column of \code{Gamma}. Default is \code{common.lambda=TRUE}}
+ 
+\item{beta0}{(numeric vector) Initial value for the regression coefficients that the algorithm will update for \code{maxiter} iterations. If \code{beta0 = NULL} a vector of zeros will be considered. These values will be used as starting values for the first lambda value}
 
 \item{alpha}{(numeric) Value between 0 and 1 for the weights given to the L1 and L2-penalties}
 
-\item{scale}{\code{TRUE} or \code{FALSE} to scale matrix \code{Sigma} for variables with unit variance and scale \code{Gamma} by the standard deviation of the corresponding predictor
+\item{scale}{\code{TRUE} or \code{FALSE} to scale matrix \code{Sigma} for variables with unit variance and scale \code{Gamma} by the standard deviation (\code{sdx}) of the corresponding predictor
 taken from the diagonal of \code{Sigma}}
+
+\item{sdx}{(numeric vector) Scaling factor that will be used to scale the regression coefficients. When \code{scale = TRUE} this scaling factor vector is set to the squared root of the diagonal of \code{Sigma}, otherwise a provided value is used assuming that \code{Sigma} and \code{Gamma} are scaled}
 
 \item{tol}{(numeric) Maximum error between two consecutive solutions of the CD algorithm to declare convergence}
 
