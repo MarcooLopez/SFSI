@@ -85,17 +85,13 @@ SEXP R_updatebeta(SEXP XtX_, SEXP Xty_,
     double *Xty=NUMERIC_POINTER(Xty_);
 
     df=(int *) R_alloc(nlambda, sizeof(int));
+    niter=(int *) R_alloc(nlambda, sizeof(int));      // Niter at each lambda
+    error=(double *) R_alloc(nlambda, sizeof(double)); // Max error b0-bnew at each lambda
     b=(double *) R_alloc(p, sizeof(double));   // Current b[j] values
     bout=(double *) R_alloc(p, sizeof(double));  // Output
     XtyHatNoj=(double *) R_alloc(p, sizeof(double)); // XtyHatNoj[j] = {XtX[,j]'b - XtX[j,j]b[j]}
 
     for(k=0; k<nlambda; k++) df[k] = p;
-
-    SEXP niter_ = PROTECT(Rf_allocVector(INTSXP, nlambda));
-    niter = INTEGER_POINTER(niter_);
-
-    SEXP error_ = PROTECT(Rf_allocVector(REALSXP, nlambda));
-    error = NUMERIC_POINTER(error_);
 
     if(Rf_isNull(b0_)){
       memset(b, 0, sizeof(double)*p);           // Initialize all b[j] to zero
@@ -201,11 +197,17 @@ SEXP R_updatebeta(SEXP XtX_, SEXP Xty_,
     }
 
     //Rprintf(" Writting results: lambda, nsup, B ...\n");
-    SEXP lambda2_=PROTECT(Rf_allocVector(REALSXP, k));
+    SEXP lambda2_ = PROTECT(Rf_allocVector(REALSXP, k));
     memcpy(NUMERIC_POINTER(lambda2_), lambda, k*sizeof(double));
 
-    SEXP df_=PROTECT(Rf_allocVector(INTSXP, k));
+    SEXP df_ = PROTECT(Rf_allocVector(INTSXP, k));
     memcpy(INTEGER_POINTER(df_), df, k*sizeof(int));
+
+    SEXP niter_ = PROTECT(Rf_allocVector(INTSXP, k));
+    memcpy(INTEGER_POINTER(niter_), niter, k*sizeof(int));
+
+    SEXP error_ = PROTECT(Rf_allocVector(REALSXP, k));
+    memcpy(NUMERIC_POINTER(error_), error, k*sizeof(double));
 
     SEXP B_ = NULL;
     if(save){
