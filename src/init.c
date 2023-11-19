@@ -19,7 +19,7 @@ extern SEXP R_lars(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP R_prune(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP R_readBinFile(SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP R_solve_mixed(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-extern SEXP R_updatebeta(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP R_updatebeta(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP R_writeBinFile(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 
 static const R_CallMethodDef CallEntries[] = {
@@ -29,7 +29,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"R_prune",                  (DL_FUNC) &R_prune,                   7},
     {"R_readBinFile",            (DL_FUNC) &R_readBinFile,             5},
     {"R_solve_mixed",            (DL_FUNC) &R_solve_mixed,            17},
-    {"R_updatebeta",             (DL_FUNC) &R_updatebeta,             13},
+    {"R_updatebeta",             (DL_FUNC) &R_updatebeta,             14},
     {"R_writeBinFile",           (DL_FUNC) &R_writeBinFile,            6},
     {NULL, NULL, 0}
 };

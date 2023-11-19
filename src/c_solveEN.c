@@ -44,22 +44,22 @@ SEXP R_updatebeta(SEXP XtX_, SEXP Xty_,
                   SEXP lambda_, SEXP alpha_, SEXP b0_,
                   SEXP tol_, SEXP maxiter_, SEXP dfmax_,
                   SEXP scale_, SEXP sd_, SEXP filename_,
-                  SEXP doubleprecision_, SEXP verbose_)
+                  SEXP doubleprecision_,
+                  SEXP task_, SEXP verbose_)
 {
     double *lambda, *sd;
-    double L1, L2, error;
+    double L1, L2, maxerror;
     long long j;
     int k, iter;
-    int *df;
+    int *df, *niter;
     int varsize, vartype;
     int inc1 = 1;
     double delta, bNew;
-    double *B;
+    double *B, *error;
     double *b, *bout, *XtyHatNoj;
     float valuefloat;
-    int nprotect = 7;
+    int nprotect = 10;
     FILE *f=NULL;
-    SEXP list, lambda2_=NULL, df_=NULL, B_=NULL;
 
     int p=Rf_length(Xty_);
     int nlambda=Rf_length(lambda_);
@@ -90,6 +90,12 @@ SEXP R_updatebeta(SEXP XtX_, SEXP Xty_,
     XtyHatNoj=(double *) R_alloc(p, sizeof(double)); // XtyHatNoj[j] = {XtX[,j]'b - XtX[j,j]b[j]}
 
     for(k=0; k<nlambda; k++) df[k] = p;
+
+    SEXP niter_ = PROTECT(Rf_allocVector(INTSXP, nlambda));
+    niter = INTEGER_POINTER(niter_);
+
+    SEXP error_ = PROTECT(Rf_allocVector(REALSXP, nlambda));
+    error = NUMERIC_POINTER(error_);
 
     if(Rf_isNull(b0_)){
       memset(b, 0, sizeof(double)*p);           // Initialize all b[j] to zero
@@ -129,11 +135,11 @@ SEXP R_updatebeta(SEXP XtX_, SEXP Xty_,
         L1 = alpha*lambda[k];
         L2 = (1-alpha)*lambda[k];
         iter = 0;          // Set iter < maxiter to enter the WHILE
-        error = tol + 1.0;   // Set a error > tol to enter the WHILE
-        while(iter<maxiter && error>tol)
+        maxerror = tol + 1.0;   // Set a error > tol to enter the WHILE
+        while(iter<maxiter && maxerror>tol)
         {
             iter++;
-            error = 0;
+            maxerror = 0;
             for(j=0; j<p; j++)
             {
                 // varj = XtX[p*j + j];  // Variance of predictor j
@@ -147,20 +153,15 @@ SEXP R_updatebeta(SEXP XtX_, SEXP Xty_,
                   F77_NAME(daxpy)(&p, &delta, XtX + p*j, &inc1, XtyHatNoj, &inc1);
 
                   XtyHatNoj[j] -= delta; // Except for k=j. delta*varj
-                  if(fabs(delta)>error){
-                    error = fabs(delta);
+                  if(fabs(delta)>maxerror){
+                    maxerror = fabs(delta);
                   }
                   b[j] = bNew;
                 }
             }
         }
-        if(verbose){
-            Rprintf(" lambda[%d]=%1.8f  nIters=%5d  Error=%G\n",k+1,lambda[k],iter,error);
-            if(error>tol){
-              Rprintf(" Warning: The process did not converge after %d iterations for lambda[%d]=%f\n",maxiter,k+1,lambda[k]);
-            }
-        }
-
+        niter[k] = iter;
+        error[k] = maxerror;
         F77_NAME(dcopy)(&p, b, &inc1, bout, &inc1);
 
         if(scale){
@@ -172,6 +173,13 @@ SEXP R_updatebeta(SEXP XtX_, SEXP Xty_,
         df[k] = 0;
         for(j=0; j<p; j++){
           if(fabs(bout[j])>0) df[k]++;
+        }
+
+        if(verbose){
+            Rprintf(" lambda[%d]=%1.8f  nsup=%5d  niter=%5d  Error=%G\n",k+1,lambda[k],df[k],iter,maxerror);
+            if(maxerror>tol){
+              Rprintf(" Warning: The process did not converge after %d iterations for lambda[%d]=%f\n",maxiter,k+1,lambda[k]);
+            }
         }
 
         if(save){
@@ -193,12 +201,13 @@ SEXP R_updatebeta(SEXP XtX_, SEXP Xty_,
     }
 
     //Rprintf(" Writting results: lambda, nsup, B ...\n");
-    lambda2_=PROTECT(Rf_allocVector(REALSXP, k));
+    SEXP lambda2_=PROTECT(Rf_allocVector(REALSXP, k));
     memcpy(NUMERIC_POINTER(lambda2_), lambda, k*sizeof(double));
 
-    df_=PROTECT(Rf_allocVector(INTSXP, k));
+    SEXP df_=PROTECT(Rf_allocVector(INTSXP, k));
     memcpy(INTEGER_POINTER(df_), df, k*sizeof(int));
 
+    SEXP B_ = NULL;
     if(save){
       fseek(f, sizeof(int), SEEK_SET); // Save the final number of solutions
       fwrite(&k, sizeof(int), 1, f);
@@ -210,12 +219,25 @@ SEXP R_updatebeta(SEXP XtX_, SEXP Xty_,
       nprotect++;
     }
 
-    PROTECT(list = Rf_allocVector(VECSXP, 3));
-    SET_VECTOR_ELT(list, 0, B_);
-    SET_VECTOR_ELT(list, 1, lambda2_);
-    SET_VECTOR_ELT(list, 2, df_);
+    SEXP list_ = PROTECT(Rf_allocVector(VECSXP, 6));
+    SET_VECTOR_ELT(list_, 0, B_);
+    SET_VECTOR_ELT(list_, 1, lambda2_);
+    SET_VECTOR_ELT(list_, 2, df_);
+    SET_VECTOR_ELT(list_, 3, niter_);
+    SET_VECTOR_ELT(list_, 4, error_);
+    SET_VECTOR_ELT(list_, 5, task_);
+
+    // Set dimnames for outputs
+    SEXP names_ = PROTECT(Rf_allocVector(VECSXP, 6));
+    SET_VECTOR_ELT(names_, 0, mkChar("beta"));
+    SET_VECTOR_ELT(names_, 1, mkChar("lambda"));
+    SET_VECTOR_ELT(names_, 2, mkChar("nsup"));
+    SET_VECTOR_ELT(names_, 3, mkChar("niter"));
+    SET_VECTOR_ELT(names_, 4, mkChar("error"));
+    SET_VECTOR_ELT(names_, 5, mkChar("task"));
+    setAttrib(list_, R_NamesSymbol, names_);
 
     UNPROTECT(nprotect);
 
-    return(list);
+    return(list_);
 }

@@ -62,25 +62,25 @@ solveEN <- function(Sigma, Gamma, alpha = 1, lambda = NULL,
     mc.cores <- ifelse(q==1L & mc.cores>1L, 1L, mc.cores)
     doubleprecision <- as.logical(precision.format=="double")
 
-    compApply <- function(ind)
+    compApply <- function(task)
     {
       if(ncol(lambda)>1L){
-        lambda0 <- lambda[,ind]
+        lambda0 <- lambda[,task]
       }else{
         lambda0 <- lambda[,1]
       }
 
       if(flagsave){
-        filename <- paste0(file_beta,fileID[ind],".bin")
+        filename <- paste0(file_beta,fileID[task],".bin")
       }else{
         filename <- NULL
       }
 
       #dyn.load("c_solveEN.so")
-      res <- .Call('R_updatebeta', Sigma, Gamma[,ind],
+      res <- .Call('R_updatebeta', Sigma, Gamma[,task],
                   lambda0, alpha, beta0, tol, maxiter, nsup.max,
                   scaleb, sdx, filename,
-                  doubleprecision, verbose2)
+                  doubleprecision, task, verbose2)
       #dyn.unload("c_solveEN.so")
 
       if(verbose & q>1L){
@@ -88,7 +88,7 @@ solveEN <- function(Sigma, Gamma, alpha = 1, lambda = NULL,
         utils::setTxtProgressBar(pb, nchar(scan(con,what="character",quiet=TRUE))/q)
       }
 
-      list(ind=ind, beta=res[[1]], lambda=res[[2]], nsup=res[[3]])
+      return(res)
     }
 
     tmpdir0 <- tempdir()
@@ -124,19 +124,23 @@ solveEN <- function(Sigma, Gamma, alpha = 1, lambda = NULL,
     }
 
     # Checkpoint
-    if(any(seq(q) != unlist(lapply(out,function(x) x$ind)) )){
+    if(any(seq(q) != unlist(lapply(out,function(x) x$task)) )){
       stop("Some sub-processes failed. Something went wrong during the analysis.")
     }
 
     out <- list(p=p, q=q, nlambda=nlambda,
                 lambda = lapply(out, function(x)x$lambda),
                 nsup = lapply(out, function(x)x$nsup),
+                niter = lapply(out, function(x)x$niter),
+                error = lapply(out, function(x)x$error),
                 beta = lapply(out, function(x)x$beta)
                )
 
     if(q == 1L){
       out$nsup <- out$nsup[[1]]
       out$lambda <- out$lambda[[1]]
+      out$niter <- out$niter[[1]]
+      out$error <- out$error[[1]]
       out$beta <- as.matrix(out$beta[[1]])
     }
 
