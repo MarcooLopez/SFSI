@@ -92,7 +92,7 @@ Solutions are found using the function 'fitBLUP' (see \code{help(fitBLUP)}) to s
   require(SFSI)
   data(wheatHTP)
   
-  index = which(Y$trial \%in\% 1:8)     # Use only a subset of data
+  index = which(Y$trial \%in\% 1:10)     # Use only a subset of data
   Y = Y[index,]
   M = scale(M[index,])/sqrt(ncol(M))  # Subset and scale markers
   G = tcrossprod(M)                   # Genomic relationship matrix
@@ -110,5 +110,16 @@ Solutions are found using the function 'fitBLUP' (see \code{help(fitBLUP)}) to s
   fm = getGenCov(y=y, K=G, pairwise=TRUE)
   fm$varU 
   fm$varE
+  \donttest{
+  # Containing some missing values:
+  # The model is estimated from common training data
+  yNA = y
+  yNA[Y$trial \%in\% 1:2, 1] = NA
+  yNA[Y$trial \%in\% 2:3, 3] = NA
+  
+  fm = getGenCov(y=yNA, K=G, pairwise=TRUE)
+  fm$varU 
+  fm$varE
+  }
 }
 \keyword{fitBLUP}

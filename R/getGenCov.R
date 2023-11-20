@@ -13,54 +13,57 @@ getGenCov <- function(y, X = NULL, Z = NULL, K = NULL,
     y <- matrix(y, ncol=1L)
   }
 
-  trn <- which(apply(y,1,function(x)all(!is.na(x))))  # Common TRN set
+  if(ncol(y) < 2L){
+    stop("Input 'y' must be a matrix with at least 2 columns")
+  }
+
+  trn <- as.vector(which(apply(y,1,function(x)all(!is.na(x)))))  # Common TRN set
   if(length(trn) == 0){
     stop("No common training set to all response variables was found")
   }else{
     if(verbose){
       message(" Calculating genetic covariances using n=",length(trn)," training observations")
     }
-    y <- y[trn,,drop=FALSE]
   }
-
-  n <- nrow(y)
-  p <- ncol(y)
+  q <- ncol(y)
 
   if(scale){
     sdy <- as.vector(apply(y, 2, sd, na.rm=TRUE))
     y <- scale(y, center=FALSE, scale=sdy)
   }else{
-    sdy <- rep(1,p)
+    sdy <- rep(1,q)
   }
 
   # Create an index for pairwise models
-  tmp <- expand.grid(j=1:p,i=1:p)
-  INDEX <- data.frame(pos=p+seq(p*(p-1)/2),
+  tmp <- expand.grid(j=1:q, i=1:q)
+  INDEX <- data.frame(pos=q+seq(q*(q-1)/2),
                       tmp[tmp$i < tmp$j,c("i","j")])
   if(!pairwise){
     INDEX <- INDEX[INDEX$i==1,]
   }
 
-  Y0 <- cbind(y, matrix(NA, nrow=n, ncol=nrow(INDEX)))
-
+  # Create a data.frame with only the TRN data from 'y'
+  # followed by the sum of responses 1+2, 1+3, ...,(q-1)+q
+  Y0 <- matrix(NA, nrow=nrow(y), ncol=q+nrow(INDEX))
+  Y0[trn,1:q] <- y[trn,]
   for(k in 1:nrow(INDEX)){
-    Y0[,INDEX$pos[k]] <- y[,INDEX$i[k]] + y[,INDEX$j[k]]
+    Y0[trn,INDEX$pos[k]] <- y[trn,INDEX$i[k]] + y[trn,INDEX$j[k]]
   }
 
   fm <- fitBLUP(Y0, BLUP=FALSE, X=X, Z=Z, K=K, U=U, d=d, verbose=verbose, ...)
 
-  varUi <- fm$varU[1:p]*(sdy^2)   # Scale using their initial SD
-  varEi <- fm$varE[1:p]*(sdy^2)
+  varUi <- fm$varU[1:q]*(sdy^2)   # Scale using their initial SD
+  varEi <- fm$varE[1:q]*(sdy^2)
 
   # Fixed effects
   if(is.null(fm$b)){
     b <- NULL
   }else{
-    b <- sweep(fm$b[,1:p,drop=F],2L,sdy,FUN="*")
+    b <- sweep(fm$b[,1:q,drop=F],2L,sdy,FUN="*")
   }
 
   if(pairwise){
-    varU <- varE <- matrix(NA, ncol=p, nrow=p)
+    varU <- varE <- matrix(NA, ncol=q, nrow=q)
     diag(varU) <- varUi
     diag(varE) <- varEi
 
@@ -71,10 +74,10 @@ getGenCov <- function(y, X = NULL, Z = NULL, K = NULL,
     out <- list(varU=varU, varE=varE, b=b)
   }else{
     # Only the gencov between the first y[,1] and the
-    # remaining y[,2:p] response variables
+    # remaining y[,2:q] response variables
     varU <- varUi
     varE <- varEi
-    covU <- covE <- rep(NA, p-1)
+    covU <- covE <- rep(NA, q-1)
 
     if(!is.null(colnames(y))){
       names(varU) <- names(varE) <- colnames(y)

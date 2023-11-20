@@ -22,7 +22,7 @@ fitBLUP <- function(y, X = NULL, Z = NULL, K = NULL, U = NULL,
   trn_list <- get_common_trn(y)
 
   # Track if the training set is the same across all response variables.
-  # If not, SVD is performed for each group with common trn set
+  # If not, EVD is performed for each group with common trn set
   commonTRN <- (length(trn_list)==1L)
 
   if((q > 1L) & !commonTRN){
