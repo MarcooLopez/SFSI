@@ -138,16 +138,19 @@ SSI <- function(y, X = NULL, b = NULL, Z = NULL, K,
   # Adjusted training phenotypes
   Xb <- NULL
   if(BLUE){
-    if(ifelse(ntraits==1L,length(b),nrow(b)) != ncol(X)){
-       stop("Number of fixed effects 'b' must be the same as the number of columns of 'X'")
+    if(length(dim(b)) != 2L){
+      b <- matrix(b, ncol=ntraits)
     }
-    if(ntraits==1L){
-      Xb <- as.vector(X%*%b)
-    }else{
-      for(k in 1:ntraits){
-        Xb <- c(Xb, as.vector(X%*%b[,k]))
-      }
+    if(nrow(b) != ncol(X)){
+       stop("Number of fixed effects 'b' must be the same as 'ncol(X)'")
     }
+    if(ncol(b) != ntraits){
+       stop("Number of columns in 'b' must be the same as 'ncol(y)'")
+    }
+    for(k in 1:ntraits){
+      Xb <- c(Xb, as.vector(X%*%b[,k]))
+    }
+
     yTRN <- matrix(y[trn]-Xb[trn], nrow=1)
   }else{
     yTRN <- matrix(y[trn], nrow=1)
