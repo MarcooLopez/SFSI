@@ -40,7 +40,7 @@ or (in matrix notation)
 <img src="https://github.com/MarcooLopez/SFSI/blob/main/vignettes/Img2.png" height="27"/>
 </p>
 
-where the predictors <b>x</b><sub><i>i</i></sub> can be indirect information from either:
+where the predictors <b>x</b><sub><i>i</i></sub> = (x<sub><i>i1</i></sub>,...,x<sub><i>ip</i></sub>)' can be indirect information from either:
 
 - Correlated traits measured in the same candidates
 - Measurements on the same trait of interest collected on related individuals
@@ -62,13 +62,13 @@ This problem is equivalent to:
 <img src="https://github.com/MarcooLopez/SFSI/blob/main/vignettes/Img4.png" height="33"/>
 </p>
 
+where <b>P</b><sub>x</sub> is the phenotypic variance-covariance matrix among predictors, <b>x</b><sub><i>i</i></sub>, and <b>G</b><sub>xy</sub> is a vector with the genetic covariances between predictors <b>x</b><sub><i>i</i></sub> and response y<sub><i>i</i></sub>.
+
 Under standard assumptions, the solution to the above problem is
 
 <p align="center">
 <img src="https://github.com/MarcooLopez/SFSI/blob/main/vignettes/Img5.png" height="28"/>
 </p>
-
-where <b>P</b><sub>x</sub> is the phenotypic variance-covariance matrix among predictors, <b>x</b><sub><i>i</i></sub>, and <b>G</b><sub>xy</sub> is a vector with the genetic covariances between predictors <b>x</b><sub><i>i</i></sub> and response y<sub><i>i</i></sub>.
 
 ### Penalized Selection Index
 The regression coefficients can be derived by impossing a penalization in the above optimization function as
