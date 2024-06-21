@@ -25,9 +25,9 @@ From GitHub (developing version)
  install_github('MarcooLopez/SFSI')                               # 3. install SFSI from GitHub
 ```
 
-## Selection Indices (SI)
+## Standard Selection Index
 
-Prediction of **breeding values** (u<sub><i>i</i></sub>) for a target trait (<i>y</i><sub><i>i</i></sub>) <i>y</i><sub>i</sub> is usually done using a **Selection Index (SI)**.
+Prediction of **breeding values** (<i>u</i><sub>i</sub>) for a target trait (<i>y</i><sub>i</sub>) is usually done using a **Selection Index (SI)**.
 In the selection index all the available information contribute to the prediction of the *i*<sup>th</sup> candidate of selection as:
 
 <p align="center">
@@ -40,7 +40,7 @@ or (in matrix notation)
 <img src="https://github.com/MarcooLopez/SFSI/blob/main/vignettes/Img2.png" height="27"/>
 </p>
 
-where the predictors <b>x</b><sub><i>i</i></sub> = (x<sub><i>i1</i></sub>,...,x<sub><i>ip</i></sub>)' can be indirect information from either:
+where the predictors <b><i>x</i></b><sub>i</sub> = (<i>x</i><sub>i1</sub>,...,<i>x</i><sub>ip</sub>)' can be indirect information from either:
 
 - Correlated traits measured in the same candidates
 - Measurements on the same trait of interest collected on related individuals
