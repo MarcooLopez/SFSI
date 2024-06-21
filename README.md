@@ -60,7 +60,7 @@ This problem is equivalent to:
 <img src="https://github.com/MarcooLopez/SFSI/blob/main/vignettes/Img4.png" height="33"/>
 </p>
 
-where <b>P</b><sub><i>x</i></sub> is the phenotypic variance-covariance matrix among predictors, <b><i>x</i></b><sub>i</sub>, and <b>G</b><sub><i>xy</i></sub> is a vector with the genetic covariances between predictors <b><i>x</i></b><sub>i</sub> and response <i>y</i><sub>i</sub>.
+where <b>P</b><sub><i>x</i></sub> is the phenotypic variance-covariance matrix of predictors and <b>G</b><sub><i>xy</i></sub> is a vector with the genetic covariances between predictors and response.
 
 Under standard assumptions, the solution to the above problem is
 
