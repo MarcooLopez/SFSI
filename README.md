@@ -75,7 +75,7 @@ The regression coefficients can be derived by impossing a sparsity-inducing pena
 <img src="https://github.com/MarcooLopez/SFSI/blob/main/vignettes/Img6.png" height="35"/>
 </p>
 
-where &lambda; is a penalty parameter and <i>F</i>(<b>&beta;</b><sub><i>i</i></sub>)
+where &lambda; is a penalty parameter and <i>F</i>(<b><i>&beta;</i></b><sub>i</sub>)
 is a penalty function on the regression coefficients. A value of &lambda;=0 yields the coefficients for the standard (un-penalized) selection index. Commonly used penalty functions are based on the L1- (i.e., **LASSO**) and L2-norms (i.e., **Ridge Regression**). **Elastic-Net** considers a weighted penalization of both norms,
 
 <p align="center">
@@ -83,6 +83,8 @@ is a penalty function on the regression coefficients. A value of &lambda;=0 yiel
 </p>
 
 where &alpha; is a weighting parameter. The LASSO and Ridge Regression appear as special cases of the Elastic-Net when &alpha;=1 and &alpha;=0, respectively.
+
+The function `LARS()` provides LASSO solutions for the entire path {λ_max=λ_1>λ_2>⋯>λ_min=0} of the parameter λ using Least Angle Regression (Efron et al., 2004).
 
 Solutions can be obtained using only the Coordinate Descent algorithm (Friedman, 2007). This method is implemented in the SFSI R-package using <b>P</b><sub>x</sub>, <b>G</b><sub>xy</sub> and &alpha; as inputs.
 
