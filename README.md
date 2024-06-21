@@ -82,15 +82,9 @@ is a penalty function on the regression coefficients. A value of &lambda;=0 yiel
 <img src="https://github.com/MarcooLopez/SFSI/blob/main/vignettes/Img10.png" height="30"/>
 </p>
 
-where &alpha; is a weighting parameter.
+where &alpha; is a weighting parameter. The LASSO and Ridge Regression appear as special cases of the Elastic-Net when &alpha;=1 and &alpha;=0, respectively.
 
-The L1-penalized and L2-penalized SI appear as special cases of the Elastic-Net-penalized index when &alpha;=1 and &alpha;=0, respectively.
-
-**NOTE:** As for the L1-penalized SI, if &alpha;>0, no closed form solution exists. Solutions can be obtained using only the Coordinate Descent algorithm (Friedman, 2007). This method is implemented in the SFSI R-package using <b>P</b><sub>x</sub>, <b>G</b><sub>xy</sub> and &alpha; as inputs.
-
-### Sparse Selection Index.
-A Penalized Selection Index involving the L1-norm is refered to as **Sparse Selection Index** as the norm induces variable selection (sparsity in the coefficients).
-
+Solutions can be obtained using only the Coordinate Descent algorithm (Friedman, 2007). This method is implemented in the SFSI R-package using <b>P</b><sub>x</sub>, <b>G</b><sub>xy</sub> and &alpha; as inputs.
 
 ## Documentation (two applications)
 * **Application with high-throughput phenotypes:**
