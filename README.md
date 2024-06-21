@@ -47,7 +47,7 @@ where the predictors <b><i>x</i></b><sub>i</sub> = (<i>x</i><sub>i1</sub>,...,<i
 
 ### Standard Selection Index
 
-The weights <b><i>&beta;</i></b><sub><i>i</i></sub> = (<i>&beta;</i><sub><i>i1</i></sub>,...,<i>&beta;</i><sub><i>ip</i></sub>)'
+The weights <b><i>&beta;</i></b><sub>i</sub> = (<i>&beta;</i><sub>i1</sub>,...,<i>&beta;</i><sub>ip</sub>)'
 are derived by minimizing the optimization problem:
 
 <p align="center">
@@ -76,15 +76,15 @@ The regression coefficients can be derived by impossing a sparsity-inducing pena
 </p>
 
 where <i>&lambda;</i> is a penalty parameter and <i>F</i>(<b><i>&beta;</i></b><sub>i</sub>)
-is a penalty function on the regression coefficients. A value of <i>&lambda;</i>=0 yields the coefficients for the standard (un-penalized) selection index. Commonly used penalty functions are based on the L1- (i.e., **LASSO**) and L2-norms (i.e., **Ridge Regression**). **Elastic-Net** considers a weighted penalization of both norms,
+is a penalty function on the regression coefficients. A value of <i>&lambda;</i> = 0 yields the coefficients for the standard (un-penalized) selection index. Commonly used penalty functions are based on the L1- (i.e., **LASSO**) and L2-norms (i.e., **Ridge Regression**). **Elastic-Net** considers a weighted penalization using both norms,
 
 <p align="center">
 <img src="https://github.com/MarcooLopez/SFSI/blob/main/vignettes/Img10.png" height="30"/>
 </p>
 
-where <i>&alpha;</i> is a weighting parameter. The LASSO and Ridge Regression appear as special cases of the Elastic-Net when <i>&alpha;</i>=1 and <i>&alpha;</i>=0, respectively.
+where <i>&alpha;</i> is a weighting parameter. The LASSO and Ridge Regression appear as special cases of the Elastic-Net when <i>&alpha;</i> = 1 and <i>&alpha;</i> = 0, respectively.
 
-Functions `LARS()` and `solveEN()` can be used to obtain solutions to the above optimization problem taking <b>P</b><sub>x</sub> and <b>G</b><sub>xy</sub> as inputs. The function `LARS()` provides LASSO solutions for the entire path of the parameter <i>&lambda;</i> using Least Angle Regression (Efron et al., 2004). Function `solveEN()` finds solutions for the Elastic-Net problem for given values of <i>&alpha;</i> and <i>&lambda;</i> via the Coordinate Descent algorithm (Friedman, 2007). 
+Functions `LARS()` and `solveEN()` can be used to obtain solutions to the above penalized optimization problem taking <b>P</b><sub><i>x</i></sub> and <b>G</b><sub><i>xy</i></sub> as inputs. The former function provides LASSO solutions for the entire <i>&lambda;</i> path using Least Angle Regression (Efron et al., 2004), and the later finds solutions for the Elastic-Net problem for given values of <i>&alpha;</i> and <i>&lambda;</i> via the Coordinate Descent algorithm (Friedman, 2007). 
 
 ## Documentation (two applications)
 * **Application with high-throughput phenotypes:**
