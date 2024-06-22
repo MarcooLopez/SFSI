@@ -81,7 +81,7 @@ $$
 where $\lambda$ is a penalty parameter and $f(\boldsymbol{\beta}_i)$ is a penalty function on the weights. A value of $\lambda = 0$ yields the coefficients for the standard (un-penalized) selection index. Commonly used penalty functions are based on the L1- (i.e., **LASSO**) and L2-norms (i.e., **Ridge Regression**). **Elastic-Net** considers a combined penalization of both norms,
 
 $$
-f(\boldsymbol{\beta}}_ i) = \alpha\sum^p_{j=1}|\beta_{ij}| + (1-\alpha)\frac{1}{2}\sum^p_{j=1}\beta^2_{ij}
+f(\boldsymbol{\beta}_ i) = \alpha\sum^p_{j=1}|\beta_{ij}| + (1-\alpha)\frac{1}{2}\sum^p_{j=1}\beta^2_{ij}
 $$
 
 <p align="center">
