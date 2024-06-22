@@ -44,7 +44,7 @@ $$\mathcal{I} = \boldsymbol{x}_{i}'\boldsymbol{\beta}_i$$
 <img src="https://github.com/MarcooLopez/SFSI/blob/main/vignettes/Img2.png" height="27"/>
 </p>
 
-where the predictors $\textbf{x}_{i}=(x_{i1},...,x_{ip})'$ can be indirect information from either:
+where the predictors $\textbf{x} _ i= (x_{i1},...,x_{ip})'$ can be indirect information from either:
 
 - Correlated traits measured in the same candidates
 - Measurements on the same trait of interest collected on related individuals
