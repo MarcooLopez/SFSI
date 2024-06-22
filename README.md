@@ -53,19 +53,11 @@ $$
 \displaystyle{\hat{\boldsymbol{\beta}}_ i = \text{arg min}\{\frac{1}{2}\mathbb{E}(u_ i - \boldsymbol{x}_{i}'\boldsymbol{\beta}_i)\}}
 $$
 
-<p align="center">
-<img src="https://github.com/MarcooLopez/SFSI/blob/main/vignettes/Img3.png" height="42"/>
-</p>
-
 This problem is equivalent to:
 
 $$
 \hat{\boldsymbol{\beta}}_ i = \text{arg min}\[\frac{1}{2}\boldsymbol{\beta}'_ i\textbf{P}_ x\boldsymbol{\beta}_ i - \textbf{G}'_ {xy}\boldsymbol{\beta}_ i\]
 $$
-
-<p align="center">
-<img src="https://github.com/MarcooLopez/SFSI/blob/main/vignettes/Img4.png" height="33"/>
-</p>
 
 where $\textbf{P}_ x$ is the phenotypic variance-covariance matrix of predictors and $\textbf{G}_{xy}$ is a vector with the genetic covariances between predictors and response.
 
@@ -78,20 +70,23 @@ Under standard assumptions, the solution to the above problem is
 ### Sparse Selection Index
 The weights can be derived by impossing a sparsity-inducing penalization in the above optimization function as
 
+$$
+\hat{\boldsymbol{\beta}}_ i = \text{arg min}\[\frac{1}{2}\boldsymbol{\beta}'_ i\textbf{P}_ x\boldsymbol{\beta}_ i - \textbf{G}'_ {xy}\boldsymbol{\beta}_ i + \lambda F(\boldsymbol{\beta}_i)\]
+$$
+
 <p align="center">
 <img src="https://github.com/MarcooLopez/SFSI/blob/main/vignettes/Img6.png" height="35"/>
 </p>
 
-where <i>&lambda;</i> is a penalty parameter and <i>F</i>(<b><i>&beta;</i></b><sub>i</sub>)
-is a penalty function on the weights. A value of <i>&lambda;</i> = 0 yields the coefficients for the standard (un-penalized) selection index. Commonly used penalty functions are based on the L1- (i.e., **LASSO**) and L2-norms (i.e., **Ridge Regression**). **Elastic-Net** considers a combined penalization of both norms,
+where $\lambda$ is a penalty parameter and $F(\boldsymbol{\beta}_i)$ is a penalty function on the weights. A value of $\lambda = 0$ yields the coefficients for the standard (un-penalized) selection index. Commonly used penalty functions are based on the L1- (i.e., **LASSO**) and L2-norms (i.e., **Ridge Regression**). **Elastic-Net** considers a combined penalization of both norms,
 
 <p align="center">
 <img src="https://github.com/MarcooLopez/SFSI/blob/main/vignettes/Img10.png" height="30"/>
 </p>
 
-where <i>&alpha;</i> is a number between 0 and 1. The LASSO and Ridge Regression appear as special cases of the Elastic-Net when <i>&alpha;</i> = 1 and <i>&alpha;</i> = 0, respectively.
+where $\alpha$ is a number between 0 and 1. The LASSO and Ridge Regression appear as special cases of the Elastic-Net when $\alpha = 1$ and $\alpha = 0$, respectively.
 
-Functions `LARS()` and `solveEN()` can be used to obtain solutions to the above penalized optimization problem taking <b>P</b><sub><i>x</i></sub> and <b>G</b><sub><i>xy</i></sub> as inputs. The former function provides LASSO solutions for the entire <i>&lambda;</i> path using Least Angle Regression (Efron et al., 2004), and the later finds solutions for the Elastic-Net problem for given values of <i>&alpha;</i> and <i>&lambda;</i> via the Coordinate Descent algorithm (Friedman, 2007). 
+Functions `LARS()` and `solveEN()` can be used to obtain solutions to the above penalized optimization problem taking $\textbf{P}_ x$ and $\textbf{G}_{xy}$ as inputs. The former function provides LASSO solutions for the entire <i>&lambda;</i> path using Least Angle Regression (Efron et al., 2004), and the later finds solutions for the Elastic-Net problem for given values of <i>&alpha;</i> and <i>&lambda;</i> via the Coordinate Descent algorithm (Friedman, 2007). 
 
 ## Documentation (two applications)
 * **Application with high-throughput phenotypes:**
