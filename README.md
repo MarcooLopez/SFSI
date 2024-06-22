@@ -1,4 +1,4 @@
-\color{sepia}# SFSI: Sparse Family and Selection Indices
+# SFSI: Sparse Family and Selection Indices
 
 [![CRAN status](https://www.r-pkg.org/badges/version/SFSI?color=green)](https://CRAN.R-project.org/package=SFSI)
 [![CRAN checks](https://badges.cranchecks.info/worst/SFSI.svg)](https://cran.r-project.org/web/checks/check_results_SFSI.html)
@@ -31,13 +31,13 @@ Prediction of **breeding values** ($u_i$) for a target trait ($y_i$) is usually 
 In the selection index all the available information contribute to the prediction of the $i^{th}$ candidate of selection as:
 
 $$
-\color{sepia}{\mathcal{I}_ i= x_{i1}\beta_{i1} + x_{i2}\beta_{i2} + \cdots + x_{ip}\beta_{ip}}
+\color{blue}{\mathcal{I}_ i= x_{i1}\beta_{i1} + x_{i2}\beta_{i2} + \cdots + x_{ip}\beta_{ip}}
 $$
 
 or (in matrix notation)
 
 $$
-\displaystyle{\mathcal{I}_ i = \boldsymbol{x}_{i}'\boldsymbol{\beta}_i}
+\color{blue}{\mathcal{I}_ i = \boldsymbol{x}_{i}'\boldsymbol{\beta}_i}
 $$
 
 where the predictors $\boldsymbol{x}_ i= (x_{i1},...,x_{ip})'$ can be indirect information from either:
@@ -50,13 +50,13 @@ where the predictors $\boldsymbol{x}_ i= (x_{i1},...,x_{ip})'$ can be indirect i
 The weights $\boldsymbol{\beta}_ i = (\beta_{i1},...,\beta_{ip})'$ are regression coefficients derived by minimizing the optimization problem:
 
 $$
-\displaystyle{\hat{\boldsymbol{\beta}}_ i = \text{arg min}\{\frac{1}{2}\mathbb{E}(u_ i - \boldsymbol{x}_{i}'\boldsymbol{\beta}_i)\}}
+\color{blue}{\hat{\boldsymbol{\beta}}_ i = \text{arg min}\{\frac{1}{2}\mathbb{E}(u_ i - \boldsymbol{x}_{i}'\boldsymbol{\beta}_i)\}}
 $$
 
 This problem is equivalent to:
 
 $$
-\hat{\boldsymbol{\beta}}_ i = \text{arg min}\[\frac{1}{2}\boldsymbol{\beta}'_ i\textbf{P}_ x\boldsymbol{\beta}_ i - \textbf{G}'_ {xy}\boldsymbol{\beta}_ i\]
+\color{blue}{\hat{\boldsymbol{\beta}}_ i = \text{arg min}\[\frac{1}{2}\boldsymbol{\beta}'_ i\textbf{P}_ x\boldsymbol{\beta}_ i - \textbf{G}'_ {xy}\boldsymbol{\beta}_i\]}
 $$
 
 where $\textbf{P}_ x$ is the phenotypic variance-covariance matrix of predictors and $\textbf{G}_{xy}$ is a vector with the genetic covariances between predictors and response.
@@ -64,25 +64,21 @@ where $\textbf{P}_ x$ is the phenotypic variance-covariance matrix of predictors
 Under standard assumptions, the solution to the above problem is
 
 $$
-\hat{\boldsymbol{\beta}}_ i = \textbf{P}^{-1}_ x\textbf{G}_{xy}
+\color{blue}{\hat{\boldsymbol{\beta}}_ i = \textbf{P}^{-1}_ x\textbf{G}_{xy}}
 $$
 
 ### Sparse Selection Index
 The weights can be derived by impossing a sparsity-inducing penalization in the above optimization function as
 
 $$
-\hat{\boldsymbol{\beta}}_ i = \text{arg min}\[\frac{1}{2}\boldsymbol{\beta}'_ i\textbf{P}_ x\boldsymbol{\beta}_ i - \textbf{G}'_ {xy}\boldsymbol{\beta}_ i + \lambda f(\boldsymbol{\beta}_i)\]
+\color{blue}{\hat{\boldsymbol{\beta}}_ i = \text{arg min}\[\frac{1}{2}\boldsymbol{\beta}'_ i\textbf{P}_ x\boldsymbol{\beta}_ i - \textbf{G}'_ {xy}\boldsymbol{\beta}_i + \lambda f(\boldsymbol{\beta}_i)\]}
 $$
 
 where $\lambda$ is a penalty parameter and $f(\boldsymbol{\beta}_i)$ is a penalty function on the weights. A value of $\lambda = 0$ yields the coefficients for the standard (un-penalized) selection index. Commonly used penalty functions are based on the L1- (i.e., **LASSO**) and L2-norms (i.e., **Ridge Regression**). **Elastic-Net** considers a combined penalization of both norms,
 
 $$
-f(\boldsymbol{\beta}_ i) = \alpha\sum^p_{j=1}|\beta_{ij}| + (1-\alpha)\frac{1}{2}\sum^p_{j=1}\beta^2_{ij}
+\color{blue}{f(\boldsymbol{\beta}_ i) = \alpha\sum^p_{j=1}|\beta_{ij}| + (1-\alpha)\frac{1}{2}\sum^p_{j=1}\beta^2_{ij}}
 $$
-
-<p align="center">
-<img src="https://github.com/MarcooLopez/SFSI/blob/main/vignettes/Img10.png" height="30"/>
-</p>
 
 where $\alpha$ is a number between 0 and 1. The LASSO and Ridge Regression appear as special cases of the Elastic-Net when $\alpha = 1$ and $\alpha = 0$, respectively.
 
