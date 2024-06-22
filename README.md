@@ -31,7 +31,7 @@ Prediction of **breeding values** ($u_i$) for a target trait ($y_i$) is usually 
 In the selection index all the available information contribute to the prediction of the $i^{th}$ candidate of selection as:
 
 $$
-\displaystyle{\mathcal{I}_ i= x_{i1}\beta_{i1} + x_{i2}\beta_{i2} + \cdots + x_{ip}\beta_{ip}}
+\color{lightblue}{\mathcal{I}_ i= x_{i1}\beta_{i1} + x_{i2}\beta_{i2} + \cdots + x_{ip}\beta_{ip}}
 $$
 
 or (in matrix notation)
@@ -66,10 +66,6 @@ Under standard assumptions, the solution to the above problem is
 $$
 \hat{\boldsymbol{\beta}}_ i = \textbf{P}^{-1}_ x\textbf{G}_{xy}
 $$
-
-<p align="center">
-<img src="https://github.com/MarcooLopez/SFSI/blob/main/vignettes/Img5.png" height="28"/>
-</p>
 
 ### Sparse Selection Index
 The weights can be derived by impossing a sparsity-inducing penalization in the above optimization function as
