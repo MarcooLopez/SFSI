@@ -30,7 +30,7 @@ From GitHub (developing version)
 Prediction of **breeding values** ($u_i$) for a target trait ($y_i$) is usually done using a **Selection Index (SI)**.
 In the selection index all the available information contribute to the prediction of the $i^{th}$ candidate of selection as:
 
-$$\displaystyle\mathcal{I}_i = x_{i1}\beta_{i1} + x_{i2}\beta_{i2} + \cdots + x_{ip}\beta_{ip}$$
+$$\displaystyle{\mathcal{I}_i = x_{i1}\beta_{i1} + x_{i2}\beta_{i2} + \cdots + x_{ip}\beta_{ip}}$$
 
 <p align="center">
 <img src="https://github.com/MarcooLopez/SFSI/blob/main/vignettes/Img1.png" height="26"/>
