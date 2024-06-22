@@ -53,9 +53,9 @@ $$\displaystyle{\hat{\boldsymbol{\beta}}_ i = \text{arg min}\{\frac{1}{2}\mathbb
 
 This problem is equivalent to:
 
-\begin{equation}
+$$
 \hat{\boldsymbol{\beta}}_ i = \text{arg min}\{\frac{1}{2}\boldsymbol{\beta}'_ i\textbf{P}_ x\boldsymbol{\beta}_ i - \textbf{G}'_ {xy}\boldsymbol{\beta}_ i\}
-\end{equation}
+$$
 
 <p align="center">
 <img src="https://github.com/MarcooLopez/SFSI/blob/main/vignettes/Img4.png" height="33"/>
