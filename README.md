@@ -38,13 +38,13 @@ $$\displaystyle{\mathcal{I} = x_{i1}\beta_{i1} + x_{i2}\beta_{i2} + \cdots + x_{
 
 or (in matrix notation)
 
-$$\displaystyle\mathcal{I} = \textbf{x}_{i}'\boldsymbol{\beta}_i$$
+$$\displaystyle{\mathcal{I} = \textbf{x}_{i}'\boldsymbol{\beta}_{i}}$$
 
 <p align="center">
 <img src="https://github.com/MarcooLopez/SFSI/blob/main/vignettes/Img2.png" height="27"/>
 </p>
 
-where the predictors $\textbf{x}_{i} = (x_{i1},...,x_{ip})'$ <b><i>x</i></b><sub>i</sub> = (<i>x</i><sub>i1</sub>,...,<i>x</i><sub>ip</sub>)' can be indirect information from either:
+where the predictors $\textbf{x}_i=(x_{i1},...,x_{ip})'$ <b><i>x</i></b><sub>i</sub> = (<i>x</i><sub>i1</sub>,...,<i>x</i><sub>ip</sub>)' can be indirect information from either:
 
 - Correlated traits measured in the same candidates
 - Measurements on the same trait of interest collected on related individuals
