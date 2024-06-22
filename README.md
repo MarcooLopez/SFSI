@@ -25,7 +25,7 @@ From GitHub (developing version)
  install_github('MarcooLopez/SFSI')                               # 3. install SFSI from GitHub
 ```
 
-## Standard Selection Index
+## Selection Indices
 
 Prediction of **breeding values** (<i>u</i><sub>i</sub>) for a target trait (<i>y</i><sub>i</sub>) is usually done using a **Selection Index (SI)**.
 In the selection index all the available information contribute to the prediction of the *i*<sup>th</sup> candidate of selection as:
