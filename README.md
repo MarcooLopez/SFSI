@@ -27,8 +27,10 @@ From GitHub (developing version)
 
 ## Selection Indices
 
-Prediction of **breeding values** (<i>u</i><sub>i</sub>) for a $y_i$ target trait (<i>y</i><sub>i</sub>) is usually done using a **Selection Index (SI)**.
-In the selection index all the available information contribute to the prediction of the *i*<sup>th</sup> candidate of selection as:
+Prediction of **breeding values** ($u_i$) for a target trait ($y_i$) is usually done using a **Selection Index (SI)**.
+In the selection index all the available information contribute to the prediction of the $i^{th}$ candidate of selection as:
+
+$$\mathbf{I}=\beta_{1}x_{i1} + \beta_{2}x_{i2} + \cdot + \beta_{p}x_{ip}$$
 
 <p align="center">
 <img src="https://github.com/MarcooLopez/SFSI/blob/main/vignettes/Img1.png" height="26"/>
