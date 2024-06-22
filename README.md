@@ -30,29 +30,20 @@ From GitHub (developing version)
 Prediction of **breeding values** ($u_i$) for a target trait ($y_i$) is usually done using a **Selection Index (SI)**.
 In the selection index all the available information contribute to the prediction of the $i^{th}$ candidate of selection as:
 
-$$\mathcal{I} = x_{i1}\beta_{i1} + x_{i2}\beta_{i2} + \cdots + x_{ip}\beta_{ip}$$
-
-<p align="center">
-<img src="https://github.com/MarcooLopez/SFSI/blob/main/vignettes/Img1.png" height="26"/>
-</p>
+$$\mathcal{I}_ i= x_{i1}\beta_{i1} + x_{i2}\beta_{i2} + \cdots + x_{ip}\beta_{ip}$$
 
 or (in matrix notation)
 
-$$\mathcal{I} = \boldsymbol{x}_{i}'\boldsymbol{\beta}_i$$
+$$\mathcal{I}_ i = \boldsymbol{x}_{i}'\boldsymbol{\beta}_i$$
 
-<p align="center">
-<img src="https://github.com/MarcooLopez/SFSI/blob/main/vignettes/Img2.png" height="27"/>
-</p>
-
-where the predictors $\textbf{x} _ i= (x_{i1},...,x_{ip})'$ can be indirect information from either:
+where the predictors $\boldsymbol{x} _ i= (x_{i1},...,x_{ip})'$ can be indirect information from either:
 
 - Correlated traits measured in the same candidates
 - Measurements on the same trait of interest collected on related individuals
 
 ### Standard Selection Index
 
-The weights $\boldsymbol{\beta}_i = (\beta_{i1},...,\beta_{ip})'$ <b><i>&beta;</i></b><sub>i</sub> = (<i>&beta;</i><sub>i1</sub>,...,<i>&beta;</i><sub>ip</sub>)'
-are regression coefficients derived by minimizing the optimization problem:
+The weights $\boldsymbol{\beta}_ i = (\beta_{i1},...,\beta_{ip})'$ are regression coefficients derived by minimizing the optimization problem:
 
 <p align="center">
 <img src="https://github.com/MarcooLopez/SFSI/blob/main/vignettes/Img3.png" height="42"/>
@@ -64,7 +55,7 @@ This problem is equivalent to:
 <img src="https://github.com/MarcooLopez/SFSI/blob/main/vignettes/Img4.png" height="33"/>
 </p>
 
-where $\textbf{P}_x$ <b>P</b><sub><i>x</i></sub> is the phenotypic variance-covariance matrix of predictors and $\textbf{G}_{xy}$ <b>G</b><sub><i>xy</i></sub> is a vector with the genetic covariances between predictors and response.
+where $\textbf{P}_ x$ is the phenotypic variance-covariance matrix of predictors and $\textbf{G}_{xy}$ is a vector with the genetic covariances between predictors and response.
 
 Under standard assumptions, the solution to the above problem is
 
