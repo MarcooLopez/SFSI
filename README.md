@@ -63,6 +63,10 @@ where $\textbf{P}_ x$ is the phenotypic variance-covariance matrix of predictors
 
 Under standard assumptions, the solution to the above problem is
 
+$$
+\hat{\boldsymbol{\beta}}_ i = \textbf{P}^{-1}_ x\textbf{G}_{xy}
+$$
+
 <p align="center">
 <img src="https://github.com/MarcooLopez/SFSI/blob/main/vignettes/Img5.png" height="28"/>
 </p>
@@ -71,14 +75,10 @@ Under standard assumptions, the solution to the above problem is
 The weights can be derived by impossing a sparsity-inducing penalization in the above optimization function as
 
 $$
-\hat{\boldsymbol{\beta}}_ i = \text{arg min}\[\frac{1}{2}\boldsymbol{\beta}'_ i\textbf{P}_ x\boldsymbol{\beta}_ i - \textbf{G}'_ {xy}\boldsymbol{\beta}_ i + \lambda F(\boldsymbol{\beta}_i)\]
+\hat{\boldsymbol{\beta}}_ i = \text{arg min}\[\frac{1}{2}\boldsymbol{\beta}'_ i\textbf{P}_ x\boldsymbol{\beta}_ i - \textbf{G}'_ {xy}\boldsymbol{\beta}_ i + \lambda f(\boldsymbol{\beta}_i)\]
 $$
 
-<p align="center">
-<img src="https://github.com/MarcooLopez/SFSI/blob/main/vignettes/Img6.png" height="35"/>
-</p>
-
-where $\lambda$ is a penalty parameter and $F(\boldsymbol{\beta}_i)$ is a penalty function on the weights. A value of $\lambda = 0$ yields the coefficients for the standard (un-penalized) selection index. Commonly used penalty functions are based on the L1- (i.e., **LASSO**) and L2-norms (i.e., **Ridge Regression**). **Elastic-Net** considers a combined penalization of both norms,
+where $\lambda$ is a penalty parameter and $f(\boldsymbol{\beta}_i)$ is a penalty function on the weights. A value of $\lambda = 0$ yields the coefficients for the standard (un-penalized) selection index. Commonly used penalty functions are based on the L1- (i.e., **LASSO**) and L2-norms (i.e., **Ridge Regression**). **Elastic-Net** considers a combined penalization of both norms,
 
 <p align="center">
 <img src="https://github.com/MarcooLopez/SFSI/blob/main/vignettes/Img10.png" height="30"/>
