@@ -31,7 +31,7 @@ Prediction of **breeding values** ($u_i$) for a target trait ($y_i$) is usually 
 In the selection index all the available information contribute to the prediction of the $i^{th}$ candidate of selection as:
 
 $$
-\color{lightblue}{\mathcal{I}_ i= x_{i1}\beta_{i1} + x_{i2}\beta_{i2} + \cdots + x_{ip}\beta_{ip}}
+\color{gray}{\mathcal{I}_ i= x_{i1}\beta_{i1} + x_{i2}\beta_{i2} + \cdots + x_{ip}\beta_{ip}}
 $$
 
 or (in matrix notation)
