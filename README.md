@@ -53,7 +53,7 @@ $$\displaystyle{\hat{\boldsymbol{\beta}}_ i = \text{arg min}\{\frac{1}{2}\mathbb
 
 This problem is equivalent to:
 
-$$\hat{\boldsymbol{\beta}}_ i = \text{arg min}\{\frac{1}{2}\boldsymbol{\beta}'_ i\textbf{P}_ x\boldsymbol{\beta}_ i - \textbf{G}'_ {xy}\boldsymbol{\beta}_ i\}$$
+$$\hat{\boldsymbol{\beta}}_ i = \text{arg min}\left\{\frac{1}{2}\boldsymbol{\beta}'_ i\textbf{P}_ x\boldsymbol{\beta}_ i - \textbf{G}'_ {xy}\boldsymbol{\beta}_ i\right\}$$
 
 <p align="center">
 <img src="https://github.com/MarcooLopez/SFSI/blob/main/vignettes/Img4.png" height="33"/>
