@@ -30,11 +30,11 @@ From GitHub (developing version)
 Prediction of **breeding values** ($u_i$) for a target trait ($y_i$) is usually done using a **Selection Index (SI)**.
 In the selection index all the available information contribute to the prediction of the $i^{th}$ candidate of selection as:
 
-$$\mathcal{I}_ i= x_{i1}\beta_{i1} + x_{i2}\beta_{i2} + \cdots + x_{ip}\beta_{ip}$$
+$$\displaystyle{\mathcal{I}_ i= x_{i1}\beta_{i1} + x_{i2}\beta_{i2} + \cdots + x_{ip}\beta_{ip}}$$
 
 or (in matrix notation)
 
-$$\mathcal{I}_ i = \boldsymbol{x}_{i}'\boldsymbol{\beta}_i$$
+$$\displaystyle{\mathcal{I}_ i = \boldsymbol{x}_{i}'\boldsymbol{\beta}_i}$$
 
 where the predictors $\boldsymbol{x} _ i= (x_{i1},...,x_{ip})'$ can be indirect information from either:
 
@@ -45,7 +45,7 @@ where the predictors $\boldsymbol{x} _ i= (x_{i1},...,x_{ip})'$ can be indirect 
 
 The weights $\boldsymbol{\beta}_ i = (\beta_{i1},...,\beta_{ip})'$ are regression coefficients derived by minimizing the optimization problem:
 
-$$\hat{\boldsymbol{\beta}}_ i = \text{arg min}\{\frac{1}{2}\mathbb{E}(u_ i - \boldsymbol{x}_{i}'\boldsymbol{\beta}_i)\}$$
+$$\displaystyle{\hat{\boldsymbol{\beta}}_ i = \text{arg min}\{\frac{1}{2}\mathbb{E}(u_ i - \boldsymbol{x}_{i}'\boldsymbol{\beta}_i)\}}$$
 
 <p align="center">
 <img src="https://github.com/MarcooLopez/SFSI/blob/main/vignettes/Img3.png" height="42"/>
@@ -53,7 +53,7 @@ $$\hat{\boldsymbol{\beta}}_ i = \text{arg min}\{\frac{1}{2}\mathbb{E}(u_ i - \bo
 
 This problem is equivalent to:
 
-$$\hat{\boldsymbol{\beta}}_ i = \text{arg min}\{\frac{1}{2}\mathbb{E}(u_ i - \boldsymbol{x}_{i}'\boldsymbol{\beta}_i)\}$$
+$$\hat{\boldsymbol{\beta}}_ i = \text{arg min}\{\frac{1}{2}\boldsymbol{\beta}'_ i\textbf{P}_ x\boldsymbol{\beta}_ i - \textbf{G}'_ {xy}\boldsymbol{\beta}_ i\}$$
 
 <p align="center">
 <img src="https://github.com/MarcooLopez/SFSI/blob/main/vignettes/Img4.png" height="33"/>
