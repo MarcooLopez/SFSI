@@ -45,13 +45,15 @@ where the predictors $\boldsymbol{x} _ i= (x_{i1},...,x_{ip})'$ can be indirect 
 
 The weights $\boldsymbol{\beta}_ i = (\beta_{i1},...,\beta_{ip})'$ are regression coefficients derived by minimizing the optimization problem:
 
-$$\hat{\boldsymbol{\beta}}_ i = arg min\{\frac{1}{2}\mathbb{E}(u_ i - \boldsymbol{x}_{i}'\boldsymbol{\beta}_i)\}$$
+$$\hat{\boldsymbol{\beta}}_ i = \text{arg min}\{\frac{1}{2}\mathbb{E}(u_ i - \boldsymbol{x}_{i}'\boldsymbol{\beta}_i)\}$$
 
 <p align="center">
 <img src="https://github.com/MarcooLopez/SFSI/blob/main/vignettes/Img3.png" height="42"/>
 </p>
 
 This problem is equivalent to:
+
+$$\hat{\boldsymbol{\beta}}_ i = \text{arg min}\{\frac{1}{2}\mathbb{E}(u_ i - \boldsymbol{x}_{i}'\boldsymbol{\beta}_i)\}$$
 
 <p align="center">
 <img src="https://github.com/MarcooLopez/SFSI/blob/main/vignettes/Img4.png" height="33"/>
