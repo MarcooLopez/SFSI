@@ -1,4 +1,4 @@
-# SFSI: Sparse Family and Selection Indices
+\color{sepia}# SFSI: Sparse Family and Selection Indices
 
 [![CRAN status](https://www.r-pkg.org/badges/version/SFSI?color=green)](https://CRAN.R-project.org/package=SFSI)
 [![CRAN checks](https://badges.cranchecks.info/worst/SFSI.svg)](https://cran.r-project.org/web/checks/check_results_SFSI.html)
