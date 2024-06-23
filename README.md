@@ -43,7 +43,7 @@ where $\boldsymbol{x}_ i= (x_{i1},...,x_{ip})'$ is the vector of measured traits
 
 ### Standard Selection Index
 
-The weights $\boldsymbol{\beta}_ i = (\beta_{i1},...,\beta_{ip})'$ are regression coefficients derived by minimizing the optimization problem:
+The weights are derived by minimizing the optimization problem:
 
 $$
 \color{NavyBlue}{\hat{\boldsymbol{\beta}}_ i = \text{arg min}\{\frac{1}{2}\mathbb{E}(u_i - \boldsymbol{x}_{i}'\boldsymbol{\beta}_i)\}}
@@ -64,7 +64,7 @@ $$
 $$
 
 ### Sparse Selection Index
-The weights can be derived by impossing a sparsity-inducing penalization in the above optimization function as
+In the sparse selection index (SSI), the weights are derived by impossing a sparsity-inducing penalization in the above optimization function as
 
 $$
 \color{NavyBlue}{\hat{\boldsymbol{\beta}}_ i = \text{arg min}\[\frac{1}{2}\boldsymbol{\beta}'_ i\textbf{P}_ x\boldsymbol{\beta}_ i - \textbf{G}'_{xy}\boldsymbol{\beta}_i + \lambda f(\boldsymbol{\beta}_i)\]}
