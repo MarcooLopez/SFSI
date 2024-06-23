@@ -70,7 +70,7 @@ $$
 \color{NavyBlue}{\hat{\boldsymbol{\beta}}_ i = \text{arg min}\[\frac{1}{2}\boldsymbol{\beta}'_ i\textbf{P}_ x\boldsymbol{\beta}_ i - \textbf{G}'_{xy}\boldsymbol{\beta}_i + \lambda f(\boldsymbol{\beta}_i)\]}
 $$
 
-where $\lambda$ is a penalty parameter and $f(\boldsymbol{\beta}_i)$ is a penalty function on the weights. A value of $\lambda = 0$ yields the coefficients for the standard (un-penalized) selection index. Commonly used penalty functions are based on the L1- (i.e., **LASSO**) and L2-norms (i.e., **Ridge Regression**). **Elastic-Net** considers a combined penalization of both norms,
+where $\lambda$ is a penalty parameter and $f(\boldsymbol{\beta}_i)$ is a penalty function on the weights. A value of $\lambda = 0$ yields the coefficients for the standard selection index. Commonly used penalty functions are based on the L1- (i.e., **LASSO**) and L2-norms (i.e., **Ridge Regression**). **Elastic-Net** considers a combined penalization of both norms,
 
 $$
 \color{NavyBlue}{f(\boldsymbol{\beta}_ i) = \alpha\sum^p_{j=1}|\beta_{ij}| + (1-\alpha)\frac{1}{2}\sum^p_{j=1}\beta^2_{ij}}
@@ -78,7 +78,7 @@ $$
 
 where $\alpha$ is a number between 0 and 1. The LASSO and Ridge Regression appear as special cases of the Elastic-Net when $\alpha = 1$ and $\alpha = 0$, respectively.
 
-Functions `LARS()` and `solveEN()` can be used to obtain solutions to the above penalized optimization problem taking $\textbf{P}_ x$ and $\textbf{G}_{xy}$ as inputs. The former function provides LASSO solutions for the entire $\lambda$ path using Least Angle Regression (Efron et al., 2004), and the later finds solutions for the Elastic-Net problem for given values of $\alpha$ and $\lambda$ via the Coordinate Descent algorithm (Friedman, 2007). 
+Functions `LARS()` and `solveEN()` can be used to obtain solutions for $\hat{\boldsymbol{\beta}}_ i$ in the above penalized optimization problem taking $\textbf{P}_ x$ and $\textbf{G}_{xy}$ as inputs. The former function provides LASSO solutions for the entire $\lambda$ path using Least Angle Regression (Efron et al., 2004), and the later finds solutions for the Elastic-Net problem for given values of $\alpha$ and $\lambda$ via the Coordinate Descent algorithm (Friedman, 2007). 
 
 ## Documentation (two applications)
 * **Application with high-throughput phenotypes:**
