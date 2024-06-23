@@ -30,19 +30,16 @@ From GitHub (developing version)
 A selection index (SI) predicts the **genetic value** ($u_i$) of a candidate of selection for a target trait ($y_i$) as the weighted sum of $p$ measured traits $x_{i1},\cdots,x_{ip}$ as:
 
 $$
-\color{NavyBlue}{\mathcal{I}_ i= x_{i1}\beta_{i1} + x_{i2}\beta_{i2} + \cdots + x_{ip}\beta_{ip}}
+\color{NavyBlue}{\hat{u}_ i = x_{i1}\beta_{i1} + x_{i2}\beta_{i2} + \cdots + x_{ip}\beta_{ip}}
 $$
 
 or (in matrix notation)
 
 $$
-\color{NavyBlue}{\mathcal{I}_ i = \boldsymbol{x}_{i}'\boldsymbol{\beta}_i}
+\color{NavyBlue}{\hat{u}_ i = \boldsymbol{x}_{i}'\boldsymbol{\beta}_i}
 $$
 
-where the predictors $\boldsymbol{x}_ i= (x_{i1},...,x_{ip})'$ can be indirect information from either:
-
-- Correlated traits measured in the same candidates
-- Measurements on the same trait of interest collected on related individuals
+where $\boldsymbol{x}_ i= (x_{i1},...,x_{ip})'$ is the vector of measured traits and $\boldsymbol{\beta}_ i = (\beta_{i1},...,\beta_{ip})'$ is the vector of weights.
 
 ### Standard Selection Index
 
