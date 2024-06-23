@@ -27,8 +27,7 @@ From GitHub (developing version)
 
 ## Selection Indices
 
-Prediction of **breeding values** ($u_i$) for a target trait ($y_i$) is usually done using a **Selection Index (SI)**.
-In the selection index all the available information contribute to the prediction of the $i^{th}$ candidate of selection as:
+A selection index (SI) predicts the **genetic value** ($u_i$) of a candidate of selection for a target trait ($y_i$) as the weighted sum of $p$ measured traits $x_{i1},\cdots,x_{ip}$ as:
 
 $$
 \color{NavyBlue}{\mathcal{I}_ i= x_{i1}\beta_{i1} + x_{i2}\beta_{i2} + \cdots + x_{ip}\beta_{ip}}
