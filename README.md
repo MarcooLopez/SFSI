@@ -39,7 +39,7 @@ $$
 \color{NavyBlue}{\hat{u}_ i = \boldsymbol{x}_{i}'\boldsymbol{\beta}_i}
 $$
 
-where $\boldsymbol{x}_ i= (x_{i1},...,x_{ip})'$ is the vector of measured traits and $\boldsymbol{\beta}_ i = (\beta_{i1},...,\beta_{ip})'$ is the vector of weights.
+where $\boldsymbol{x}_ i = (x_{i1},\cdots,x_{ip})'$ is the vector of measured traits and $\boldsymbol{\beta}_ i = (\beta_{i1},\cdots,\beta_{ip})'$ is the vector of weights.
 
 ### Standard Selection Index
 
