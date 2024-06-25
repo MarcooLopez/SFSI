@@ -55,9 +55,7 @@ $$
 \color{NavyBlue}{\hat{\boldsymbol{\beta}}_ i = \text{arg min}\[\frac{1}{2}\boldsymbol{\beta}'_ i\textbf{P}_ x\boldsymbol{\beta}_ i - \textbf{G}'_ {xy}\boldsymbol{\beta}_i\]}
 $$
 
-where $\textbf{P}_ x$ is the phenotypic variance-covariance matrix of predictors and $\textbf{G}_{xy}$ is a vector with the genetic covariances between predictors and response.
-
-Under standard assumptions, the solution to the above problem is
+where $\textbf{P}_ x$ is the phenotypic variance-covariance matrix of predictors and $\textbf{G}_{xy}$ is a vector with the genetic covariances between predictors and response. Under standard assumptions, the solution to the above problem is
 
 $$
 \color{NavyBlue}{\hat{\boldsymbol{\beta}}_ i = \textbf{P}^{-1}_ x\textbf{G}_{xy}}
