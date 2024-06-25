@@ -76,7 +76,7 @@ $$
 
 where $\alpha$ is a number between 0 and 1. The LASSO and Ridge Regression appear as special cases of the Elastic-Net when $\alpha = 1$ and $\alpha = 0$, respectively.
 
-Functions `LARS()` and `solveEN()` can be used to obtain solutions for $\hat{\boldsymbol{\beta}}_ i$ in the above penalized optimization problem taking $\textbf{P}_ x$ and $\textbf{G}_{xy}$ as inputs. The former function provides LASSO solutions for the entire $\lambda$ path using Least Angle Regression (Efron et al., 2004), and the later finds solutions for the Elastic-Net problem for given values of $\alpha$ and $\lambda$ via the Coordinate Descent algorithm (Friedman, 2007). 
+Functions `LARS()` and `solveEN()` can be used to obtain solutions for $\hat{\boldsymbol{\beta}}_ i$ in the above penalized optimization problem taking $\textbf{P}_ x$ and $\textbf{G}_{xy}$ as inputs. The former function provides LASSO solutions for the entire $\lambda$ path using *Least Angle Regression* (Efron et al., 2004), and the later finds solutions for the Elastic-Net problem for given values of $\alpha$ and $\lambda$ via the *Coordinate Descent algorithm* (Friedman, 2007). 
 
 ## Documentation (two applications)
 * **Application with high-throughput phenotypes:**
