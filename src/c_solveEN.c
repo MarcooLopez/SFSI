@@ -44,60 +44,57 @@ SEXP R_updatebeta(SEXP XtX_, SEXP Xty_,
                   SEXP lambda_, SEXP alpha_, SEXP b0_,
                   SEXP tol_, SEXP maxiter_, SEXP dfmax_,
                   SEXP scale_, SEXP sd_, SEXP filename_,
-                  SEXP doubleprecision_,
-                  SEXP task_, SEXP verbose_)
+                  SEXP doubleprecision_, SEXP verbose_)
 {
-    double *lambda, *sd;
-    double L1, L2, maxerror;
+    double L1, L2, maxerror, delta, bNew;
     long long j;
     int k, iter;
-    int *df, *niter;
     int varsize, vartype;
     int inc1 = 1;
-    double delta, bNew;
-    double *B, *error;
-    double *b, *bout, *XtyHatNoj;
+    double *B;
     float valuefloat;
     int nprotect = 10;
-    FILE *f=NULL;
+    FILE *f = NULL;
 
-    int p=Rf_length(Xty_);
-    int nlambda=Rf_length(lambda_);
-    int maxiter=INTEGER_VALUE(maxiter_);
-    int dfmax=INTEGER_VALUE(dfmax_);
-    int verbose=asLogical(verbose_);
-    int scale=asLogical(scale_);
-    double alpha=NUMERIC_VALUE(alpha_);
-    double tol=NUMERIC_VALUE(tol_);
-    int doubleprecision=asLogical(doubleprecision_);
-    int save=!Rf_isNull(filename_);
+    int p = Rf_length(Xty_);
+    int nlambda = Rf_length(lambda_);
+    int maxiter = INTEGER_VALUE(maxiter_);
+    int dfmax = INTEGER_VALUE(dfmax_);
+    int verbose = asLogical(verbose_);
+    int scale = asLogical(scale_);
+    double alpha = NUMERIC_VALUE(alpha_);
+    double tol = NUMERIC_VALUE(tol_);
+    int doubleprecision = asLogical(doubleprecision_);
+    int save = !Rf_isNull(filename_);
 
-    PROTECT(lambda_=AS_NUMERIC(lambda_));
-    lambda=NUMERIC_POINTER(lambda_);
+    PROTECT(lambda_ = AS_NUMERIC(lambda_));
+    double *lambda = NUMERIC_POINTER(lambda_);
 
-    PROTECT(sd_=AS_NUMERIC(sd_));
-    sd=NUMERIC_POINTER(sd_);
+    PROTECT(sd_ = AS_NUMERIC(sd_));
+    double *sd = NUMERIC_POINTER(sd_);
 
-    PROTECT(XtX_=AS_NUMERIC(XtX_));
-    double *XtX=NUMERIC_POINTER(XtX_);
+    PROTECT(XtX_ = AS_NUMERIC(XtX_));
+    double *XtX = NUMERIC_POINTER(XtX_);
 
-    PROTECT(Xty_=AS_NUMERIC(Xty_));
-    double *Xty=NUMERIC_POINTER(Xty_);
+    PROTECT(Xty_ = AS_NUMERIC(Xty_));
+    double *Xty = NUMERIC_POINTER(Xty_);
 
-    df=(int *) R_alloc(nlambda, sizeof(int));
-    niter=(int *) R_alloc(nlambda, sizeof(int));      // Niter at each lambda
-    error=(double *) R_alloc(nlambda, sizeof(double)); // Max error b0-bnew at each lambda
-    b=(double *) R_alloc(p, sizeof(double));   // Current b[j] values
-    bout=(double *) R_alloc(p, sizeof(double));  // Output
-    XtyHatNoj=(double *) R_alloc(p, sizeof(double)); // XtyHatNoj[j] = {XtX[,j]'b - XtX[j,j]b[j]}
+    int *df = (int *) R_alloc(nlambda, sizeof(int));
+    int *niter = (int *) R_alloc(nlambda, sizeof(int));      // Niter at each lambda
+    double *error = (double *) R_alloc(nlambda, sizeof(double)); // Max error b0-bnew at each lambda
+    double *b = (double *) R_alloc(p, sizeof(double));   // Current b[j] values
+    double *bout = (double *) R_alloc(p, sizeof(double));  // Output
+    double *XtyHatNoj = (double *) R_alloc(p, sizeof(double)); // XtyHatNoj[j] = {XtX[,j]'b - XtX[j,j]b[j]}
 
-    for(k=0; k<nlambda; k++) df[k] = p;
+    for(k=0; k<nlambda; k++){
+      df[k] = p;
+    }
 
     if(Rf_isNull(b0_)){
       memset(b, 0, sizeof(double)*p);           // Initialize all b[j] to zero
       memset(XtyHatNoj, 0, sizeof(double)*p);  // Since all b[j] are initially 0, all XtyHatNoj[j] are so
     }else{
-      PROTECT(b0_=AS_NUMERIC(b0_));
+      PROTECT(b0_ = AS_NUMERIC(b0_));
       nprotect++;
 
       memcpy(b, NUMERIC_POINTER(b0_), sizeof(double)*p);
@@ -221,22 +218,20 @@ SEXP R_updatebeta(SEXP XtX_, SEXP Xty_,
       nprotect++;
     }
 
-    SEXP list_ = PROTECT(Rf_allocVector(VECSXP, 6));
+    SEXP list_ = PROTECT(Rf_allocVector(VECSXP, 5));
     SET_VECTOR_ELT(list_, 0, B_);
     SET_VECTOR_ELT(list_, 1, lambda2_);
     SET_VECTOR_ELT(list_, 2, df_);
     SET_VECTOR_ELT(list_, 3, niter_);
     SET_VECTOR_ELT(list_, 4, error_);
-    SET_VECTOR_ELT(list_, 5, task_);
 
     // Set dimnames for outputs
-    SEXP names_ = PROTECT(Rf_allocVector(VECSXP, 6));
+    SEXP names_ = PROTECT(Rf_allocVector(VECSXP, 5));
     SET_VECTOR_ELT(names_, 0, mkChar("beta"));
     SET_VECTOR_ELT(names_, 1, mkChar("lambda"));
     SET_VECTOR_ELT(names_, 2, mkChar("nsup"));
     SET_VECTOR_ELT(names_, 3, mkChar("niter"));
     SET_VECTOR_ELT(names_, 4, mkChar("error"));
-    SET_VECTOR_ELT(names_, 5, mkChar("task"));
     setAttrib(list_, R_NamesSymbol, names_);
 
     UNPROTECT(nprotect);

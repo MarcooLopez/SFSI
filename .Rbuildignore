@@ -15,3 +15,5 @@
 ^NEWS\.html$
 ^vignettes/Img/*\.png
 ^misc
+^doc$
+^Meta$

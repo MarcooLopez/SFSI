@@ -7,11 +7,11 @@
 
 The SFSI R-package solves penalized regression problems offering tools for the solutions to penalized selection indices. In this repository we maintain the latest (developing) version.
 
-*Last update: Nov 17, 2023*
+*Last update: Jun 24, 2024*
 
 ## Package installation
 
-Installation of SFSI package requires a R-version greater than 3.5.0
+Installation of SFSI package requires a R-version &ge; 3.6.0
 
 From CRAN (stable version)
 ```r
@@ -25,121 +25,68 @@ From GitHub (developing version)
  install_github('MarcooLopez/SFSI')                               # 3. install SFSI from GitHub
 ```
 
-## Selection Indices (SI)
+## Selection Indices
 
-Prediction of **breeding values** (u<sub><i>i</i></sub>) for a target trait (y<sub><i>i</i></sub>) is usually done using a **Selection Index (SI)**.
-In the selection index all the available information contribute to the prediction of the *i*<sup>th</sup> candidate of selection as:
+A selection index (SI) predicts the **genetic value** ($u_i$) of a candidate of selection for a target trait ($y_i$) as the weighted sum of $p$ measured traits $x_{i1},\dots,x_{ip}$ as:
 
-<p align="center">
-<img src="https://github.com/MarcooLopez/SFSI/blob/main/vignettes/Img1.png" height="26"/>
-</p>
+$$
+\color{NavyBlue}{\hat{u}_ i = x_{i1}\beta_{i1} + x_{i2}\beta_{i2} + \cdots + x_{ip}\beta_{ip}}
+$$
 
 or (in matrix notation)
 
-<p align="center">
-<img src="https://github.com/MarcooLopez/SFSI/blob/main/vignettes/Img2.png" height="27"/>
-</p>
+$$
+\color{NavyBlue}{\hat{u}_ i = \boldsymbol{x}_{i}'\boldsymbol{\beta}_i}
+$$
 
-where the predictors <b>x</b><sub><i>i</i></sub> can be indirect information from either:
-
-- Correlated traits measured in the same candidates
-- Measurements on the same trait of interest collected on related individuals
-
-In the first case, the borrowing of information is provided by the **genetic covariance between the target trait and measured traits**. The second case is a kinship-based prediction approach since the borrowing of information is taken from **genetic relateness among individuals**. These relationships can be provided through either a pedigree- or marker-based relationship matrix (**genomic prediction**).
+where $\boldsymbol{x}_ i = (x_{i1},\dots,x_{ip})'$ is the vector of measured traits and $\boldsymbol{\beta}_ i = (\beta_{i1},\dots,\beta_{ip})'$ is the vector of weights.
 
 ### Standard Selection Index
 
-The weights <b>&beta;</b><sub><i>i</i></sub> = (&beta;<sub><i>i1</i></sub>,...,&beta;<sub><i>ip</i></sub>)'
-are derived by minimizing the optimization problem:
+The weights are derived by minimizing the optimization problem:
 
-<p align="center">
-<img src="https://github.com/MarcooLopez/SFSI/blob/main/vignettes/Img3.png" height="42"/>
-</p>
+$$
+\color{NavyBlue}{\hat{\boldsymbol{\beta}}_ i = \text{arg min}\{\frac{1}{2}\mathbb{E}(u_i - \boldsymbol{x}_{i}'\boldsymbol{\beta}_i)\}}
+$$
 
 This problem is equivalent to:
 
-<p align="center">
-<img src="https://github.com/MarcooLopez/SFSI/blob/main/vignettes/Img4.png" height="33"/>
-</p>
+$$
+\color{NavyBlue}{\hat{\boldsymbol{\beta}}_ i = \text{arg min}\[\frac{1}{2}\boldsymbol{\beta}'_ i\textbf{P}_ x\boldsymbol{\beta}_ i - \textbf{G}'_ {xy}\boldsymbol{\beta}_i\]}
+$$
 
-Under standard assumptions, the solution to the above problem is
+where $\textbf{P}_ x$ is the phenotypic variance-covariance matrix of predictors and $\textbf{G}_{xy}$ is a vector with the genetic covariances between predictors and response. Under standard assumptions, the solution to the above problem is
 
-<p align="center">
-<img src="https://github.com/MarcooLopez/SFSI/blob/main/vignettes/Img5.png" height="28"/>
-</p>
+$$
+\color{NavyBlue}{\hat{\boldsymbol{\beta}}_ i = \textbf{P}^{-1}_ x\textbf{G}_{xy}}
+$$
 
-where <b>P</b><sub>x</sub> is the phenotypic variance-covariance matrix among predictors, <b>x</b><sub><i>i</i></sub>, and <b>G</b><sub>xy</sub> is a vector with the genetic covariances between predictors <b>x</b><sub><i>i</i></sub> and response y<sub><i>i</i></sub>.
+### Sparse Selection Index
+In the sparse selection index (SSI), the weights are derived by impossing a sparsity-inducing penalization in the above optimization function as
 
-### Penalized Selection Index
-The regression coefficients can be derived by impossing a penalization in the above optimization function as
+$$
+\color{NavyBlue}{\hat{\boldsymbol{\beta}}_ i = \text{arg min}\[\frac{1}{2}\boldsymbol{\beta}'_ i\textbf{P}_ x\boldsymbol{\beta}_ i - \textbf{G}'_{xy}\boldsymbol{\beta}_i + \lambda f(\boldsymbol{\beta}_i)\]}
+$$
 
-<p align="center">
-<img src="https://github.com/MarcooLopez/SFSI/blob/main/vignettes/Img6.png" height="35"/>
-</p>
+where $\lambda$ is a penalty parameter and $f(\boldsymbol{\beta}_i)$ is a penalty function on the weights. A value of $\lambda = 0$ yields the coefficients for the standard selection index. Commonly used penalty functions are based on the L1- (i.e., **LASSO**) and L2-norms (i.e., **Ridge Regression**). **Elastic-Net** considers a combined penalization of both norms,
 
-where &lambda; is a penalty parameter and <i>F</i>(<b>&beta;</b><sub><i>i</i></sub>)
-is a penalty function on the regression coefficients. A value of &lambda;=0 yields the coefficients for the standard (un-penalized) selection index. Commonly used penalty functions are based on the L1- and L2- norms.
+$$
+\color{NavyBlue}{f(\boldsymbol{\beta}_ i) = \alpha\sum^p_{j=1}|\beta_{ij}| + (1-\alpha)\frac{1}{2}\sum^p_{j=1}\beta^2_{ij}}
+$$
 
-* **L1-penalized Selection Index:** is obtained using the L1-norm:
+where $\alpha$ is a number between 0 and 1. The LASSO and Ridge Regression appear as special cases of the Elastic-Net when $\alpha = 1$ and $\alpha = 0$, respectively.
 
-<p align="center">
-<img src="https://github.com/MarcooLopez/SFSI/blob/main/vignettes/Img7.png" height="28"/>
-</p>
-
-This problem does not have a closed form solution; however, a solution can be obtained using Least Angle Regression (LARS) (Efron, 2004) or Coordinate Descent algorithms (Friedman, 2007). These algorithms are implemented in the SFSI R-package using <b>P</b><sub>x</sub> and <b>G</b><sub>xy</sub> as inputs.
-
-* **L2-penalized Selection Index:** is obtained using the L2-norm:
-
-<p align="center">
-<img src="https://github.com/MarcooLopez/SFSI/blob/main/vignettes/Img8.png" height="30"/>
-</p>
-
-In this case, the solution has the following closed form:
-
-<p align="center">
-<img src="https://github.com/MarcooLopez/SFSI/blob/main/vignettes/Img9.png" height="27"/>
-</p>
-
-where <b>I</b> is an identity matrix.
-
-* **Elastic-Net-penalized SI:** considers a weighted penalization of both norms,
-
-<p align="center">
-<img src="https://github.com/MarcooLopez/SFSI/blob/main/vignettes/Img10.png" height="30"/>
-</p>
-
-where &alpha; is a weighting parameter.
-
-The L1-penalized and L2-penalized SI appear as special cases of the Elastic-Net-penalized index when &alpha;=1 and &alpha;=0, respectively.
-
-**NOTE:** As for the L1-penalized SI, if &alpha;>0, no closed form solution exists. Solutions can be obtained using only the Coordinate Descent algorithm (Friedman, 2007). This method is implemented in the SFSI R-package using <b>P</b><sub>x</sub>, <b>G</b><sub>xy</sub> and &alpha; as inputs.
-
-### Sparse Selection Index.
-A Penalized Selection Index involving the L1-norm is refered to as **Sparse Selection Index** as the norm induces variable selection (sparsity in the coefficients).
-
+Functions `LARS()` and `solveEN()` can be used to obtain solutions for $\hat{\boldsymbol{\beta}}_ i$ in the above penalized optimization problem taking $\textbf{P}_ x$ and $\textbf{G}_{xy}$ as inputs. The former function provides LASSO solutions for the entire $\lambda$ path using Least Angle Regression (Efron et al., 2004), and the later finds solutions for the Elastic-Net problem for given values of $\alpha$ and $\lambda$ via the Coordinate Descent algorithm (Friedman, 2007). 
 
 ## Documentation (two applications)
 * **Application with high-throughput phenotypes:**
-Lopez-Cruz *et al.* (2020). [[Manuscript](https://www.nature.com/articles/s41598-020-65011-2)]. [[Documentation](http://htmlpreview.github.io/?https://github.com/MarcooLopez/SFSI/blob/master/inst/doc/PSI-documentation.html)].
+Lopez-Cruz *et al.* (2020). [[Manuscript](https://www.nature.com/articles/s41598-020-65011-2)]. [[Documentation](http://htmlpreview.github.io/?https://github.com/MarcooLopez/SFSI/blob/master/inst/doc/SSI-documentation.html)].
 
 * **Application to Genomic Prediction:**
-Lopez-Cruz and de los Campos (2021). [[Manuscript](https://doi.org/10.1093/genetics/iyab030)]. [[Documentation](http://htmlpreview.github.io/?https://github.com/MarcooLopez/SFSI/blob/master/inst/doc/SSI-documentation.html)].
+Lopez-Cruz and de los Campos (2021). [[Manuscript](https://doi.org/10.1093/genetics/iyab030)]. [[Documentation](http://htmlpreview.github.io/?https://github.com/MarcooLopez/SFSI/blob/master/inst/doc/SGP-documentation.html)].
 
 ## How to cite SFSI R-package
 * Lopez-Cruz M, Olson E, Rovere G, Crossa J, Dreisigacker S, Mondal S, Singh R & de los Campos G **(2020)**. Regularized selection indices for breeding value prediction using hyper-spectral image data. *Scientific Reports*, 10, 8195.
-
-A BibTeX entry for LaTeX is
-```
-  @Article{,
-    title = {Regularized selection indices for breeding value prediction using hyper-spectral image data},
-    author = {Marco Lopez-Cruz and Eric Olson and Gabriel Rovere and Jose Crossa and Susanne Dreisigacker
-              and Suchismita Mondal and Ravi Singh and Gustavo {de los Campos}},
-    journal = {Scientific Reports},
-    year = {2020},
-    volume = {10},
-    pages = {8195},
-  }
-```
 
 ## Dataset
 The SFSI R-package contains a reduced version of the full data used in Lopez-Cruz *et al.* (2020) for the development of penalized selection indices. This full data can be found in this [repository](https://github.com/MarcooLopez/Data_for_Lopez-Cruz_et_al_2020).
