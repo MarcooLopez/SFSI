@@ -7,7 +7,7 @@
 
 The SFSI R-package solves penalized regression problems offering tools for the solutions to penalized selection indices. In this repository we maintain the latest (developing) version.
 
-*Last update: Nov 17, 2023*
+*Last update: Jun 24, 2024*
 
 ## Package installation
 
@@ -80,10 +80,10 @@ Functions `LARS()` and `solveEN()` can be used to obtain solutions for $\hat{\bo
 
 ## Documentation (two applications)
 * **Application with high-throughput phenotypes:**
-Lopez-Cruz *et al.* (2020). [[Manuscript](https://www.nature.com/articles/s41598-020-65011-2)]. [[Documentation](http://htmlpreview.github.io/?https://github.com/MarcooLopez/SFSI/blob/master/inst/doc/PSI-documentation.html)].
+Lopez-Cruz *et al.* (2020). [[Manuscript](https://www.nature.com/articles/s41598-020-65011-2)]. [[Documentation](http://htmlpreview.github.io/?https://github.com/MarcooLopez/SFSI/blob/master/inst/doc/SSI-documentation.html)].
 
 * **Application to Genomic Prediction:**
-Lopez-Cruz and de los Campos (2021). [[Manuscript](https://doi.org/10.1093/genetics/iyab030)]. [[Documentation](http://htmlpreview.github.io/?https://github.com/MarcooLopez/SFSI/blob/master/inst/doc/SSI-documentation.html)].
+Lopez-Cruz and de los Campos (2021). [[Manuscript](https://doi.org/10.1093/genetics/iyab030)]. [[Documentation](http://htmlpreview.github.io/?https://github.com/MarcooLopez/SFSI/blob/master/inst/doc/SGP-documentation.html)].
 
 ## How to cite SFSI R-package
 * Lopez-Cruz M, Olson E, Rovere G, Crossa J, Dreisigacker S, Mondal S, Singh R & de los Campos G **(2020)**. Regularized selection indices for breeding value prediction using hyper-spectral image data. *Scientific Reports*, 10, 8195.
