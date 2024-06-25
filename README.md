@@ -11,7 +11,7 @@ The SFSI R-package solves penalized regression problems offering tools for the s
 
 ## Package installation
 
-Installation of SFSI package requires a R-version $\geq$ 3.6.0
+Installation of SFSI package requires a R-version &ge; 3.6.0
 
 From CRAN (stable version)
 ```r
