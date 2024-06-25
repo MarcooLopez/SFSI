@@ -62,7 +62,7 @@ $$
 $$
 
 ### Sparse Selection Index
-In the sparse selection index (SSI), the weights are derived by impossing a sparsity-inducing penalization in the above optimization function as
+In the sparse selection index (SSI), the weights are derived by imposing a sparsity-inducing penalization in the above optimization function as
 
 $$
 \color{NavyBlue}{\hat{\boldsymbol{\beta}}_ i = \text{arg min}\[\frac{1}{2}\boldsymbol{\beta}'_ i\textbf{P}_ x\boldsymbol{\beta}_ i - \textbf{G}'_{xy}\boldsymbol{\beta}_i + \lambda f(\boldsymbol{\beta}_i)\]}
