@@ -62,7 +62,7 @@ $$
 $$
 
 ### Sparse Selection Index
-In the sparse selection index (SSI), the weights are derived by impossing a sparsity-inducing penalization in the above optimization function as
+In the sparse selection index (SSI), the weights are derived by imposing a sparsity-inducing penalization in the above optimization function as
 
 $$
 \color{NavyBlue}{\hat{\boldsymbol{\beta}}_ i = \text{arg min}\[\frac{1}{2}\boldsymbol{\beta}'_ i\textbf{P}_ x\boldsymbol{\beta}_ i - \textbf{G}'_{xy}\boldsymbol{\beta}_i + \lambda f(\boldsymbol{\beta}_i)\]}
@@ -87,19 +87,6 @@ Lopez-Cruz and de los Campos (2021). [[Manuscript](https://doi.org/10.1093/genet
 
 ## How to cite SFSI R-package
 * Lopez-Cruz M, Olson E, Rovere G, Crossa J, Dreisigacker S, Mondal S, Singh R & de los Campos G **(2020)**. Regularized selection indices for breeding value prediction using hyper-spectral image data. *Scientific Reports*, 10, 8195.
-
-A BibTeX entry for LaTeX is
-```
-  @Article{,
-    title = {Regularized selection indices for breeding value prediction using hyper-spectral image data},
-    author = {Marco Lopez-Cruz and Eric Olson and Gabriel Rovere and Jose Crossa and Susanne Dreisigacker
-              and Suchismita Mondal and Ravi Singh and Gustavo {de los Campos}},
-    journal = {Scientific Reports},
-    year = {2020},
-    volume = {10},
-    pages = {8195},
-  }
-```
 
 ## Dataset
 The SFSI R-package contains a reduced version of the full data used in Lopez-Cruz *et al.* (2020) for the development of penalized selection indices. This full data can be found in this [repository](https://github.com/MarcooLopez/Data_for_Lopez-Cruz_et_al_2020).
