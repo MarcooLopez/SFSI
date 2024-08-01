@@ -3,7 +3,7 @@
 [![CRAN status](https://www.r-pkg.org/badges/version/SFSI?color=green)](https://CRAN.R-project.org/package=SFSI)
 [![CRAN checks](https://badges.cranchecks.info/worst/SFSI.svg)](https://cran.r-project.org/web/checks/check_results_SFSI.html)
 [![Downloads](https://cranlogs.r-pkg.org/badges/grand-total/SFSI)](http://www.r-pkg.org/pkg/SFSI)
-[![Downloads](http://cranlogs.r-pkg.org/badges/SFSI)](http://www.r-pkg.org/pkg/SFSI)
+[![Downloads](https://cranlogs.r-pkg.org/badges/SFSI)](http://www.r-pkg.org/pkg/SFSI)
 
 The SFSI R-package solves penalized regression problems offering tools for the solutions to penalized selection indices. In this repository we maintain the latest (developing) version.
 
