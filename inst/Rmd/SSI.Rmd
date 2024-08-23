@@ -1,0 +1,112 @@
+---
+title: "Hadamard product"
+output:
+  html_document:
+    #css: style.css
+    toc: true
+    toc_float: false
+---
+
+```{r initialsetup, include=FALSE}
+knitr::opts_chunk$set(cache=FALSE)
+require(SFSI)
+```
+
+## Examples
+
+### Example 1
+Defining response variable and predictors. A training and a testing set are also defined.
+```{r eval=TRUE, echo=TRUE}
+data(wheatHTP)
+
+y <- scale(Y[,"E1"])                # Response variable
+X <- scale(X_E1) #[,seq(1,ncol(X_E1),by=3)])                  # Spectral data
+
+# Training and testing sets
+tst <- which(Y$trial %in% 1:9)
+set.seed(1985)
+#tst <- sample(seq_along(y),length(y)*0.3)
+trn <- seq_along(y)[-tst]
+
+y1 <- scale(y[trn])
+X1 <- scale(X[trn,])
+
+y2 <- scale(y[tst])
+X2 <- scale(X[tst,])
+
+Vx <- var(X1) 
+```
+
+###  Phenotypic prediction
+```{r eval=TRUE, echo=TRUE}
+covP <- cov(y1,X1)[1,]  
+fm1 <- solveEN(Sigma=Vx, Gamma=covP)
+
+yHat1 <- predict(fm1, X=X1)[,-1]   # Prediction in training set
+yHat2 <- predict(fm1, X=X2)[,-1]   # Prediction in testing set
+lambda_y <- fm1$lambda[-1]
+```
+
+#### Prediction accuracy
+```{r eval=TRUE, echo=TRUE, fig.align='center', fig.width=8.5, fig.height=4.1}
+library(ggplot2)
+dat <- rbind(data.frame(Set="Training", lambda=lambda_y, accuracy=cor(y1,yHat1)[1,]),
+             data.frame(Set="Testing",  lambda=lambda_y, accuracy=cor(y2,yHat2)[1,]))
+
+ggplot(dat, aes(-log(lambda), accuracy)) +
+geom_line(linewidth=0.7) + facet_wrap(~Set, scales="free_y") + theme_bw() 
+```
+
+### Prediction of the genotype
+```{r eval=TRUE, echo=TRUE}
+G <- tcrossprod(scale(M))/ncol(M)   # Genomic relationship matrix 
+
+fm2 <- getGenCov(cbind(y1,X1), K=G[trn,trn], pairwise=FALSE, verbose=FALSE)
+covU <- fm2$covU                    # Genetic covariance between X and y
+
+fm3 <- solveEN(Sigma=Vx, Gamma=covU)
+uHat1 <- predict(fm3, X=X1)[,-1]     # Prediction in training set
+uHat2 <- predict(fm3, X=X2)[,-1]     # Prediction in testing set
+lambda_u <- fm3$lambda[-1]
+```
+
+#### Prediction accuracy
+
+Using simply Pearson correlation
+
+```{r eval=TRUE, echo=TRUE, fig.align='center', fig.width=5.8, fig.height=4.1}
+dat <- rbind(data.frame(Set="Testing", Type="Genotypic", lambda=lambda_u, accuracy=cor(y2,uHat2)[1,]),
+             data.frame(Set="Testing", Type="Phenotypic", lambda=lambda_y, accuracy=cor(y2,yHat2)[1,]))
+
+ggplot(dat, aes(-log(lambda), accuracy, group=Type, color=Type)) +
+geom_line(linewidth=0.7) + facet_wrap(~Set, scales="free_y") + theme_bw() 
+```
+
+```{r eval=TRUE, echo=TRUE}
+# Testing set
+fm4 <- getGenCov(cbind(y2,scale(uHat2)), K=G[tst,tst], pairwise=FALSE, verbose=FALSE)
+accuracy <- fm4$covU/sqrt(fm4$varU[1]*(fm4$varU+fm4$varE)[-1])
+
+res1 <- data.frame(Set="Testing", lambda=lambda_u, accuracy)
+
+```
+
+Comparison of the accuracy of the phenotypic prediction
+
+```{r eval=TRUE, echo=TRUE}
+# Testing set
+fm5 <- getGenCov(cbind(y2,scale(yHat2)), K=G[tst,tst], pairwise=FALSE, verbose=FALSE)
+accuracy <- fm5$covU/sqrt(fm5$varU[1]*(fm5$varU+fm5$varE)[-1])
+
+res2 <- data.frame(Set="Testing", lambda=lambda_y, accuracy)
+```
+
+#### Calculate covariances in training set
+```{r eval=TRUE, echo=TRUE, fig.align='center', fig.width=5.8, fig.height=4.1}
+dat <- rbind(data.frame(Type="Genotypic",res1),
+             data.frame(Type="Phenotypic",res2))
+
+ggplot(dat, aes(-log(lambda), accuracy, group=Type, color=Type)) +
+geom_line(linewidth=0.7) + facet_wrap(~Set, scales="free_y") + theme_bw() 
+```
+

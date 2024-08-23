@@ -3,12 +3,13 @@
 \alias{solveEN}
 \title{Coordinate Descent algorithm to solve Elastic-Net-type problems}
 \usage{
-solveEN(Sigma, Gamma, alpha = 1, lambda = NULL, nlambda = 100, 
+solveEN(Sigma, Gamma, alpha = 1, lambda = NULL, nlambda = 100,
         lambda.min = .Machine$double.eps^0.5, lambda.max = NULL,
-        common.lambda = TRUE, beta0 = NULL, nsup.max = NULL, 
-        scale = TRUE, sdx = NULL, tol = 1E-5, maxiter = 1000, 
+        common.lambda = TRUE, beta0 = NULL, nsup.max = NULL,
+        scale = TRUE, sdx = NULL, tol = 1E-5, maxiter = 1000,
         mc.cores = 1L, save.at = NULL, fileID = NULL,
-        precision.format = c("double","single"), verbose = FALSE)
+        precision.format = c("double","single"), sparse = FALSE,
+        eps = .Machine$double.eps*100, verbose = FALSE)
         
 }
 \arguments{
@@ -53,6 +54,10 @@ Default \code{nsup.max = NULL} will calculate solutions for the entire lambda gr
 \item{fileID}{(character) Suffix added to the file name where regression coefficients are to be saved. Default \code{fileID = NULL} will automatically add sequential integers from 1 to the number of columns of \code{Gamma}}
 
 \item{precision.format}{(character) Either 'single' or 'double' for numeric precision and memory occupancy (4 or 8 bytes, respectively) of the regression coefficients. This is only used when \code{save.at} is not \code{NULL}}
+
+\item{sparse}{\code{TRUE} or \code{FALSE} to whether matrix \code{Sigma} is sparse with entries being zero or near-zero}
+
+\item{eps}{(numeric) A numerical zero to determine if entries are near-zero. Default is the machine precision}
 
 \item{verbose}{\code{TRUE} or \code{FALSE} to whether printing progress}
 }

@@ -16,4 +16,5 @@
 ^vignettes/Img/*\.png
 ^misc
 ^doc$
+^inst/Rmd$
 ^Meta$
