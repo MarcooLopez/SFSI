@@ -3,7 +3,7 @@
 [![CRAN status](https://www.r-pkg.org/badges/version/SFSI?color=green)](https://CRAN.R-project.org/package=SFSI)
 [![CRAN checks](https://badges.cranchecks.info/worst/SFSI.svg)](https://cran.r-project.org/web/checks/check_results_SFSI.html)
 [![Downloads](https://cranlogs.r-pkg.org/badges/grand-total/SFSI)](http://www.r-pkg.org/pkg/SFSI)
-[![Downloads/month](http://cranlogs.r-pkg.org/badges/SFSI?color=blue)](http://www.r-pkg.org/pkg/SFSI)
+[![Downloads/month](https://cranlogs.r-pkg.org/badges/SFSI)](http://www.r-pkg.org/pkg/SFSI)
 
 The SFSI R-package solves penalized regression problems offering tools for the solutions to penalized selection indices. In this repository we maintain the latest (developing) version.
 
@@ -28,12 +28,6 @@ From GitHub (developing version)
 ## Selection Indices
 
 A selection index (SI) predicts the **genetic value** ($u_i$) of a candidate of selection for a target trait ($y_i$) as the weighted sum of $p$ measured traits $x_{i1},\dots,x_{ip}$ as:
-
-$$
-\color{NavyBlue}{\hat{u}_ i = x_{i1}\beta_{i1} + x_{i2}\beta_{i2} + \cdots + x_{ip}\beta_{ip}}
-$$
-
-or (in matrix notation)
 
 $$
 \color{NavyBlue}{\hat{u}_ i = \boldsymbol{x}_{i}'\boldsymbol{\beta}_i}
@@ -76,7 +70,7 @@ $$
 
 where $\alpha$ is a number between 0 and 1. The LASSO and Ridge Regression appear as special cases of the Elastic-Net when $\alpha = 1$ and $\alpha = 0$, respectively.
 
-Functions `LARS()` and `solveEN()` can be used to obtain solutions for $\hat{\boldsymbol{\beta}}_ i$ in the above penalized optimization problem taking $\textbf{P}_ x$ and $\textbf{G}_{xy}$ as inputs. The former function provides LASSO solutions for the entire $\lambda$ path using Least Angle Regression (Efron et al., 2004), and the later finds solutions for the Elastic-Net problem for given values of $\alpha$ and $\lambda$ via the Coordinate Descent algorithm (Friedman, 2007). 
+Functions `LARS()` and `solveEN()` can be used to obtain solutions for $\hat{\boldsymbol{\beta}}_ i$ in the above penalized optimization problem taking $\textbf{P}_ x$ and $\textbf{G}_{xy}$ as inputs. The former function provides LASSO solutions for the entire $\lambda$ path using *Least Angle Regression* (Efron et al., 2004), and the later finds solutions for the Elastic-Net problem for given values of $\alpha$ and $\lambda$ via the *Coordinate Descent algorithm* (Friedman, 2007). 
 
 ## Documentation (two applications)
 * **Application with high-throughput phenotypes:**
