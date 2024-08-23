@@ -1,5 +1,6 @@
-### Version 1.4.1 (Jun-26-2024). [GitHub only]
+### Version 1.4.1 (Aug-23-2024)
 
+  - Some warnings were fixed in the documentation as required by CRAN.
   - Fixed bugs in functions 'fitBLUP', 'SGP', 'getGenCov': an error was produced if 'y' has 2 dimensions but it is a 'data.frame'. This was fixed by using 'as.matrix(y)'
   - Fixed bug in 'multitrait.plot' function
   - Fixed bug in checkpoint in function 'fitBLUP': an error was produced whenever Z = NULL & K = NULL & ntraits > 1. This error is not produced if an EVD is provided

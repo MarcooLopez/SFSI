@@ -304,7 +304,7 @@ SEXP R_lars(SEXP XtX_, SEXP Xty_,
         reduce_vector_double(ninactive, covar, nnew, itmp);
 
         if(verbose){
-          Rprintf("--------------------------------------------------------------------\n",k);
+          Rprintf("--------------------------------------------------------------------\n");
         }
         for(i=0; i<nnew; i++){
           inew = inactive[itmp[i]];
@@ -401,7 +401,7 @@ SEXP R_lars(SEXP XtX_, SEXP Xty_,
 
       if(isLASSO && ndrops>0){
         if(verbose){
-          Rprintf("--------------------------------------------------------------------\n",k);
+          Rprintf("--------------------------------------------------------------------\n");
         }
         for(i=0; i<ndrops; i++){
           if(verbose){

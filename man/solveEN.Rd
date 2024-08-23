@@ -31,7 +31,7 @@ to a minimum equal to zero. If \code{alpha = 0} the grid is generated starting f
 \item{common.lambda}{\code{TRUE} or \code{FALSE} to whether computing the coefficients for a grid of lambdas common to all columns of \code{Gamma}
  or for a grid of lambdas specific to each column of \code{Gamma}. Default is \code{common.lambda = TRUE}}
  
-\item{beta0}{(numeric vector) Initial value for the regression coefficients that the algorithm will update for \code{maxiter} iterations. If \code{beta0 = NULL} a vector of zeros will be considered. These values will be used as starting values for the first lambda value}
+\item{beta0}{(numeric vector) Initial value for the regression coefficients that will be updated. If \code{beta0 = NULL} a vector of zeros will be considered. These values will be used as starting values for the first lambda value}
 
 \item{alpha}{(numeric) Value between 0 and 1 for the weights given to the L1 and L2-penalties}
 
